@@ -1,15 +1,16 @@
-# AstraFX + Vercel (Frontend + Backend together)
+# AstraFX Backend (Vercel Port)
 
-This contains your AstraFX UI and a serverless API for OANDA.
+## Setup
+1. Replace `server.py` with your actual backend `server.py` from your zip export.
+2. Push this folder to your GitHub repo.
+3. Connect repo to Vercel. Vercel will deploy the FastAPI app.
 
-## Deploy
-1) Push to a GitHub repo.
-2) On **Vercel → New Project**, import your repo and **Deploy**.
-3) In Project **Settings → Environment Variables**, add:
-   - `OANDA_TOKEN` = your OANDA Practice API token
-4) Visit your URL and click **Analyze**.
+## Env Vars
+- `OANDA_TOKEN` (required)
+- `OANDA_ENV` (optional: practice/live)
+- `DATA_PROVIDER` (optional: OANDA/TWELVEDATA/ALPHAVANTAGE)
 
-If you later host an external API, you can set:
-```js
-localStorage.setItem('astra_api','https://my-api.example.com');
-```
+## Test URLs
+- `/health`
+- `/scan?pairs=EURUSD,GBPUSD&tf=H1&min_score=70`
+- `/ohlc?pair=EURUSD&tf=H1&limit=200`

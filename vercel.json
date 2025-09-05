@@ -1,0 +1,21 @@
+{
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.11"
+    }
+  },
+  "routes": [
+    {
+      "src": "^/scan$",
+      "dest": "/api/index/api/scan"
+    },
+    {
+      "src": "^/ohlc$",
+      "dest": "/api/index/api/ohlc"
+    },
+    {
+      "src": "^/health$",
+      "dest": "/api/index/health"
+    }
+  ]
+}
