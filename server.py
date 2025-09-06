@@ -18,121 +18,159 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DATA_PROVIDER = os.getenv("DATA_PROVIDER", "OANDA").upper()
+# === PATCH: In-memory TTL cache + request coalescing (+ optional stale-while-revalidate) ===
+import time, asyncio
+from dataclasses import dataclass
+from typing import Dict as _Dict, List as _List, Optional as _Optional, Tuple as _Tuple, Set as _Set
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+from fastapi import APIRouter
 
-# --------------------------- OANDA ---------------------------
+# ---- Tunables via env (defaults picked from our plan: TTL 30–60s) ----
+CACHE_TTL_SEC: int = int(os.environ.get("CACHE_TTL_SEC", "45"))      # 0 disables cache
+CACHE_SWR_SEC: int = int(os.environ.get("CACHE_SWR_SEC", "0"))       # e.g., "25" to enable SWR
+CACHE_PATHS: _Set[str] = set(
+    p.strip() for p in os.environ.get("CACHE_PATHS", "/api/ohlc,/api/scan").split(",") if p.strip()
+)
+# Optional: cap the number of entries (None = unlimited). Eviction is best-effort (expired first).
+CACHE_MAX_ENTRIES: _Optional[int] = int(os.environ.get("CACHE_MAX_ENTRIES", "0")) or None
 
-def oanda_base_url() -> str:
-    env = os.getenv("OANDA_ENV", "practice").lower()
-    return "https://api-fxpractice.oanda.com" if env != "live" else "https://api-fxtrade.oanda.com"
+@dataclass
+class _CacheEntry:
+    body: bytes
+    status_code: int
+    headers: _List[_Tuple[str, str]]   # excluding content-length (we recompute)
+    media_type: _Optional[str]
+    expires_at: float
 
-def oanda_headers() -> Dict[str, str]:
-    token = os.getenv("OANDA_TOKEN", "").strip()
-    if not token:
-        raise HTTPException(status_code=500, detail="Missing OANDA_TOKEN env var")
-    return {"Authorization": f"Bearer {token}"}
+    def is_fresh(self, now: float) -> bool:
+        return now < self.expires_at
 
-def map_pair_to_oanda(pair: str) -> str:
-    pair = pair.upper().strip()
-    if pair == "XAUUSD":
-        return "XAU_USD"
-    if len(pair) == 6:
-        return pair[0:3] + "_" + pair[3:6]
-    return pair.replace("/", "_")
+class _HTTPCache:
+    def __init__(self) -> None:
+        self.entries: _Dict[str, _CacheEntry] = {}
+        self.locks: _Dict[str, asyncio.Lock] = {}
+        # Metrics
+        self.hits = 0
+        self.misses = 0
+        self.stale_served = 0
+        self.revalidations = 0
+        self.coalesced_waiters = 0
 
-def map_tf_to_oanda(tf: str) -> str:
-    tf = tf.upper()
-    return {
-        "M5":"M5","M15":"M15","M30":"M30",
-        "H1":"H1","H4":"H4","D1":"D","D":"D",
-    }.get(tf, "H1")
+    def get_lock(self, key: str) -> asyncio.Lock:
+        lock = self.locks.get(key)
+        if lock is None:
+            lock = asyncio.Lock()
+            self.locks[key] = lock
+        return lock
 
-def fetch_oanda_candles(pair: str, tf: str, limit: int = 200) -> List[Dict[str, Any]]:
-    instrument = map_pair_to_oanda(pair)
-    gran = map_tf_to_oanda(tf)
-    url = f"{oanda_base_url()}/v3/instruments/{instrument}/candles"
-    params = {"granularity": gran, "count": max(1, min(int(limit), 500)), "price": "M"}
-    r = requests.get(url, headers=oanda_headers(), params=params, timeout=20)
-    if r.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"OANDA candles error: {r.status_code} {r.text[:180]}")
-    data = r.json()
-    out = []
-    for c in data.get("candles", []):
-        if not c.get("complete", False):
-            continue
-        mid = c.get("mid", {})
-        out.append({
-            "time": c.get("time"),
-            "open": float(mid.get("o")),
-            "high": float(mid.get("h")),
-            "low": float(mid.get("l")),
-            "close": float(mid.get("c")),
-        })
-    return out
+    def get(self, key: str) -> _Optional[_CacheEntry]:
+        return self.entries.get(key)
 
-# --------------------- TwelveData / AlphaVantage (optional) ---------------------
+    def set(self, key: str, entry: _CacheEntry) -> None:
+        self.entries[key] = entry
+        # Best-effort prune if over cap: drop expired first, then oldest arbitrary
+        if CACHE_MAX_ENTRIES and len(self.entries) > CACHE_MAX_ENTRIES:
+            now = time.time()
+            expired_keys = [k for k, v in self.entries.items() if not v.is_fresh(now)]
+            for k in expired_keys:
+                if len(self.entries) <= CACHE_MAX_ENTRIES:
+                    break
+                self.entries.pop(k, None)
+            # Still over? pop arbitrary extras
+            while len(self.entries) > CACHE_MAX_ENTRIES:
+                self.entries.pop(next(iter(self.entries)))
 
-def fetch_twelvedata_ohlc(pair: str, tf: str, limit: int = 200) -> List[Dict[str, Any]]:
-    key = os.getenv("TWELVEDATA_KEY", "").strip()
-    if not key:
-        raise HTTPException(status_code=500, detail="Missing TWELVEDATA_KEY")
-    interval = {"M5":"5min","M15":"15min","M30":"30min","H1":"1h","H4":"4h","D1":"1day"}.get(tf.upper(),"1h")
-    url = "https://api.twelvedata.com/time_series"
-    params = {"symbol": pair, "interval": interval, "outputsize": min(limit,500), "apikey": key}
-    r = requests.get(url, params=params, timeout=20)
-    if r.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"TwelveData error: {r.status_code} {r.text[:180]}")
-    vals = list(reversed(r.json().get("values") or []))
-    return [{
-        "time": v.get("datetime"),
-        "open": float(v["open"]),
-        "high": float(v["high"]),
-        "low": float(v["low"]),
-        "close": float(v["close"]),
-    } for v in vals]
+_cache = _HTTPCache()
 
-def fetch_alphavantage_ohlc(pair: str, tf: str, limit: int = 200) -> List[Dict[str, Any]]:
-    key = os.getenv("ALPHAVANTAGE_KEY", "").strip()
-    if not key:
-        raise HTTPException(status_code=500, detail="Missing ALPHAVANTAGE_KEY")
-    func = {"H1":"FX_INTRADAY","H4":"FX_INTRADAY","D1":"FX_DAILY","M5":"FX_INTRADAY","M15":"FX_INTRADAY","M30":"FX_INTRADAY"}.get(tf.upper(),"FX_INTRADAY")
-    interval = {"M5":"5min","M15":"15min","M30":"30min","H1":"60min","H4":"240min"}.get(tf.upper(),"60min")
-    params = {"function": func, "from_symbol": pair[0:3], "to_symbol": pair[3:6], "apikey": key}
-    if func == "FX_INTRADAY":
-        params["interval"] = interval
-    url = "https://www.alphavantage.co/query"
-    r = requests.get(url, params=params, timeout=20)
-    if r.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"AlphaVantage error: {r.status_code} {r.text[:180]}")
-    js = r.json()
-    series_key = next((k for k in js.keys() if "Time Series" in k), None)
-    if not series_key:
-        raise HTTPException(status_code=502, detail=f"AlphaVantage no series: {list(js.keys())}")
-    raw = js[series_key]
-    rows = sorted(raw.items())
-    return [{
-        "time": t,
-        "open": float(v["1. open"]),
-        "high": float(v["2. high"]),
-        "low": float(v["3. low"]),
-        "close": float(v["4. close"]),
-    } for t, v in rows[-limit:]]
+class _CoalescingTTLMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, ttl: int, swr: int, paths: _Set[str]) -> None:
+        super().__init__(app)
+        self.ttl = ttl
+        self.swr = swr
+        self.paths = paths
 
-# --------------------------- Provider router ---------------------------
+    @staticmethod
+    def _fmt_utc(ts: float) -> str:
+        return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ts))
 
-def fetch_ohlc_router(pair: str, tf: str, limit: int = 200) -> List[Dict[str, Any]]:
-    prov = os.getenv("DATA_PROVIDER", DATA_PROVIDER).upper()
-    if prov == "OANDA":
-        return fetch_oanda_candles(pair, tf, limit)
-    if prov == "TWELVEDATA":
-        return fetch_twelvedata_ohlc(pair, tf, limit)
-    if prov == "ALPHAVANTAGE":
-        return fetch_alphavantage_ohlc(pair, tf, limit)
-    # MOCK fallback
-    seed = 1.2345 if pair != "XAUUSD" else 2400.0
-    out = []
-    val = seed
-    for i in range(limit):
+    @staticmethod
+    def _key_from_request(request) -> str:
+        # Stable key: path + sorted query params (multi-values supported)
+        items = sorted(request.query_params.multi_items())
+        qs = "&".join(f"{k}={v}" for k, v in items)
+        return f"{request.url.path}?{qs}"
+
+    def _build_response(self, entry: _CacheEntry, cache_status: str, expires_at: float) -> Response:
+        headers = dict(entry.headers)
+        headers["X-Cache"] = cache_status
+        headers["X-Cache-Expires"] = self._fmt_utc(expires_at)
+        return Response(
+            content=entry.body,
+            status_code=entry.status_code,
+            headers=headers,
+            media_type=entry.media_type,
+        )
+
+    async def _refresh(self, key, request, call_next):
+        """Background revalidation (used for SWR)."""
+        lock = _cache.get_lock(key)
+        async with lock:
+            response = await call_next(request)
+            body = b""
+            async for chunk in response.body_iterator:
+                body += chunk
+            if response.status_code == 200:
+                headers = [(k, v) for k, v in response.headers.items() if k.lower() != "content-length"]
+                _cache.revalidations += 1
+                _cache.set(
+                    key,
+                    _CacheEntry(
+                        body=body,
+                        status_code=response.status_code,
+                        headers=headers,
+                        media_type=response.media_type,
+                        expires_at=time.time() + self.ttl,
+                    ),
+                )
+
+    async def dispatch(self, request, call_next):
+        # Only GET requests for whitelisted routes are cached
+        if request.method != "GET" or request.url.path not in self.paths or self.ttl <= 0:
+            return await call_next(request)
+
+        key = self._key_from_request(request)
+        now = time.time()
+        entry = _cache.get(key)
+
+        # Fresh hit
+        if entry and entry.is_fresh(now):
+            _cache.hits += 1
+            return self._build_response(entry, "HIT", entry.expires_at)
+
+        # Expired but SWR window valid -> serve stale immediately and kick off revalidation
+        if entry and self.swr > 0 and now < entry.expires_at + self.swr:
+            _cache.stale_served += 1
+            lock = _cache.get_lock(key)
+            if not lock.locked():  # avoid stampede
+                asyncio.create_task(self._refresh(key, request, call_next))
+            return self._build_response(entry, "STALE", entry.expires_at)
+
+        # MISS / hard expired: coalesce concurrent waiters
+        lock = _cache.get_lock(key)
+        if lock.locked():
+            _cache.coalesced_waiters += 1
+            async with lock:
+                refreshed = _cache.get(key)
+                if refreshed and refreshed.is_fresh(time.time()):
+                    return self._build_response(refreshed, "COALESCED", refreshed.expires_at)
+
+        async with lock:
+            # Double-check after acquiring
+            entry2 = _cache.get(key)
+            if entry2 and entry2.is_fresh(time.time()):
+                _cache.hits += 1
+                return self._build_response(entry2, "HIT", entry2.expires_at)
         o = val * (1 + (0.0005 - 0.001 * (i % 2)))
         h = o * (1 + 0.001)
         l = o * (1 - 0.001)
