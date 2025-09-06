@@ -62,6 +62,95 @@ def decode_jwt(token:str):
 # App + CORS
 # --------------------------------------------------------------------------------------
 app = FastAPI(title="AstraFX Backend v2.3", version="2.3")
+
+# ==== AUTH BLOCK 2: endpoints (paste right after app = FastAPI(...)) ====
+class AuthBody(BaseModel):
+    email: EmailStr
+    password: str
+
+@app.post("/auth/signup")
+def auth_signup(body: AuthBody):
+    con = db()
+    try:
+        h, s = hash_pw(body.password)
+        con.execute(
+            "INSERT INTO users(email,pw_hash,salt,created_at) VALUES(?,?,?,?)",
+            (body.email.lower(), h, s, int(time.time()))
+        )
+        con.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=409, detail="Email already registered")
+    finally:
+        con.close()
+    return {"ok": True}
+
+@app.post("/auth/login")
+def auth_login(body: AuthBody):
+    con = db()
+    try:
+        cur = con.execute("SELECT pw_hash,salt FROM users WHERE email=?", (body.email.lower(),))
+        row = cur.fetchone()
+        if not row or not verify_pw(body.password, row[0], row[1]):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        token = issue_jwt(body.email)
+        resp = JSONResponse({"ok": True})
+        resp.set_cookie("astrafx_jwt", token, httponly=True, secure=True, samesite="Lax", max_age=7*24*3600, path="/")
+        return resp
+    finally:
+        con.close()
+
+@app.post("/auth/logout")
+def auth_logout():
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie("astrafx_jwt", path="/")
+    return resp
+
+@app.get("/auth/me")
+def auth_me(request: Request):
+    tok = request.cookies.get("astrafx_jwt", "")
+    if not tok:
+        raise HTTPException(status_code=401, detail="Not logged in")
+    try:
+        payload = decode_jwt(tok)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    return {"ok": True, "email": payload.get("sub")}
+# ==== END AUTH BLOCK 2 ====
+
+# ==== AUTH BLOCK 3: middleware to require login for /app and /api ====
+@app.middleware("http")
+async def auth_gate(request: Request, call_next):
+    path = request.url.path
+
+    # Public paths:
+    if (
+        path == "/" or
+        path.startswith("/auth/") or
+        path.startswith("/health") or
+        path.startswith("/static") or
+        path.startswith("/assets") or
+        path.endswith(".css") or path.endswith(".js") or
+        path.endswith(".png") or path.endswith(".jpg") or path.endswith(".svg") or
+        path.endswith(".ico")
+    ):
+        return await call_next(request)
+
+    # Protected:
+    if path.startswith("/app") or path.startswith("/api/") or path == "/scan" or path == "/ohlc":
+        tok = request.cookies.get("astrafx_jwt", "")
+        if not tok:
+            if path.startswith("/api/"):
+                return JSONResponse({"error":"unauthorized"}, status_code=401)
+            return RedirectResponse(url="/")
+        try:
+            decode_jwt(tok)  # raises if invalid/expired
+        except Exception:
+            if path.startswith("/api/"):
+                return JSONResponse({"error":"invalid session"}, status_code=401)
+            return RedirectResponse(url="/")
+    return await call_next(request)
+# ==== END AUTH BLOCK 3 ====
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -829,6 +918,12 @@ def api_scan(
             print("scan error", p, e)
             continue
     return {"tf": tf, "signals": results}
+
+# ==== AUTH BLOCK 4: /app alias (so /app loads your app.html) ====
+@app.get("/app")
+def app_alias():
+    return RedirectResponse(url="/app.html")
+# ==== END AUTH BLOCK 4 ====
 
 # Serve the frontend from /
 app.mount("/", StaticFiles(directory="public", html=True), name="static")
