@@ -6,8 +6,10 @@
 import os
 from typing import List, Dict, Any, Optional
 import requests
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
 app = FastAPI(title="AstraFX Backend v2.3", version="2.3")
 app.add_middleware(
@@ -24,60 +26,44 @@ from dataclasses import dataclass
 from typing import Dict as _Dict, List as _List, Optional as _Optional, Tuple as _Tuple, Set as _Set
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
-from fastapi import APIRouter
 
-# ---- Tunables via env (defaults picked from our plan: TTL 30–60s) ----
+# Tunables
 CACHE_TTL_SEC: int = int(os.environ.get("CACHE_TTL_SEC", "45"))      # 0 disables cache
 CACHE_SWR_SEC: int = int(os.environ.get("CACHE_SWR_SEC", "0"))       # e.g., "25" to enable SWR
 CACHE_PATHS: _Set[str] = set(
     p.strip() for p in os.environ.get("CACHE_PATHS", "/api/ohlc,/api/scan").split(",") if p.strip()
 )
-# Optional: cap the number of entries (None = unlimited). Eviction is best-effort (expired first).
 CACHE_MAX_ENTRIES: _Optional[int] = int(os.environ.get("CACHE_MAX_ENTRIES", "0")) or None
 
 @dataclass
 class _CacheEntry:
     body: bytes
     status_code: int
-    headers: _List[_Tuple[str, str]]   # excluding content-length (we recompute)
+    headers: _List[_Tuple[str, str]]   # excluding content-length
     media_type: _Optional[str]
     expires_at: float
-
-    def is_fresh(self, now: float) -> bool:
-        return now < self.expires_at
+    def is_fresh(self, now: float) -> bool: return now < self.expires_at
 
 class _HTTPCache:
     def __init__(self) -> None:
         self.entries: _Dict[str, _CacheEntry] = {}
         self.locks: _Dict[str, asyncio.Lock] = {}
-        # Metrics
-        self.hits = 0
-        self.misses = 0
-        self.stale_served = 0
-        self.revalidations = 0
-        self.coalesced_waiters = 0
-
+        self.hits = self.misses = self.stale_served = self.revalidations = self.coalesced_waiters = 0
     def get_lock(self, key: str) -> asyncio.Lock:
         lock = self.locks.get(key)
         if lock is None:
             lock = asyncio.Lock()
             self.locks[key] = lock
         return lock
-
-    def get(self, key: str) -> _Optional[_CacheEntry]:
-        return self.entries.get(key)
-
+    def get(self, key: str) -> _Optional[_CacheEntry]: return self.entries.get(key)
     def set(self, key: str, entry: _CacheEntry) -> None:
         self.entries[key] = entry
-        # Best-effort prune if over cap: drop expired first, then oldest arbitrary
         if CACHE_MAX_ENTRIES and len(self.entries) > CACHE_MAX_ENTRIES:
             now = time.time()
-            expired_keys = [k for k, v in self.entries.items() if not v.is_fresh(now)]
-            for k in expired_keys:
-                if len(self.entries) <= CACHE_MAX_ENTRIES:
-                    break
+            expired = [k for k, v in self.entries.items() if not v.is_fresh(now)]
+            for k in expired:
+                if len(self.entries) <= CACHE_MAX_ENTRIES: break
                 self.entries.pop(k, None)
-            # Still over? pop arbitrary extras
             while len(self.entries) > CACHE_MAX_ENTRIES:
                 self.entries.pop(next(iter(self.entries)))
 
@@ -85,28 +71,34 @@ _cache = _HTTPCache()
 
 class _CoalescingTTLMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, ttl: int, swr: int, paths: _Set[str]) -> None:
-        super().__init__(app)
-        self.ttl = ttl
-        self.swr = swr
-        self.paths = paths
-
+        super().__init__(app); self.ttl = ttl; self.swr = swr; self.paths = paths
     @staticmethod
-    def _fmt_utc(ts: float) -> str:
-        return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ts))
-
+    def _fmt_utc(ts: float) -> str: return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ts))
     @staticmethod
     def _key_from_request(request) -> str:
-        # Stable key: path + sorted query params (multi-values supported)
         items = sorted(request.query_params.multi_items())
         qs = "&".join(f"{k}={v}" for k, v in items)
         return f"{request.url.path}?{qs}"
-
     def _build_response(self, entry: _CacheEntry, cache_status: str, expires_at: float) -> Response:
-        headers = dict(entry.headers)
-        headers["X-Cache"] = cache_status
-        headers["X-Cache-Expires"] = self._fmt_utc(expires_at)
-        return Response(
-            content=entry.body,
+        headers = dict(entry.headers); headers["X-Cache"] = cache_status; headers["X-Cache-Expires"] = self._fmt_utc(expires_at)
+        return Response(content=entry.body, status_code=entry.status_code, headers=headers, media_type=entry.media_type)
+    async def _refresh(self, key, request, call_next):
+        lock = _cache.get_lock(key)
+        async with lock:
+            response = await call_next(request)
+            body = b""
+            async for chunk in response.body_iterator: body += chunk
+            if response.status_code == 200:
+                headers = [(k, v) for k, v in response.headers.items() if k.lower() != "content-length"]
+                _cache.revalidations += 1
+                _cache.set(key, _CacheEntry(body, response.status_code, headers, response.media_type, time.time() + self.ttl))
+    async def dispatch(self, request, call_next):
+        if request.method != "GET" or request.url.path not in self.paths or self.ttl <= 0:
+            return await call_next(request)
+        key = self._key_from_request(request); now = time.time(); entry = _cache.get(key)
+        if entry and entry.is_fresh(now):
+            _cache.hits += 1; return self._build_response(entry, "HIT", entry.expires_at)
+        if entry and self.swr > 0 and now < entry.expires_at + self.sw_
             status_code=entry.status_code,
             headers=headers,
             media_type=entry.media_type,
