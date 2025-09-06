@@ -14,6 +14,50 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+import os, sqlite3, time, hashlib, hmac, base64
+from pathlib import Path
+from typing import Optional
+import jwt
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel, EmailStr
+
+JWT_SECRET = os.getenv("JWT_SECRET", "change-me-super-secret")
+JWT_ISS = "astrafx"
+DB_PATH = Path("data/auth.db")
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+def db():
+    con = sqlite3.connect(DB_PATH)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS users(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT UNIQUE NOT NULL,
+          pw_hash TEXT NOT NULL,
+          salt TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        )
+    """)
+    return con
+
+def hash_pw(password: str, salt: Optional[bytes]=None) -> tuple[str,str]:
+    if salt is None:
+        salt = os.urandom(16)
+    dk = hashlib.scrypt(password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1, dklen=32)
+    return base64.b64encode(dk).decode(), base64.b64encode(salt).decode()
+
+def verify_pw(password: str, pw_hash_b64: str, salt_b64: str) -> bool:
+    salt = base64.b64decode(salt_b64)
+    dk = hashlib.scrypt(password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1, dklen=32)
+    return hmac.compare_digest(base64.b64encode(dk).decode(), pw_hash_b64)
+
+def issue_jwt(sub: str, ttl=60*60*24*7):  # 7 days
+    now = int(time.time())
+    payload = {"iss": JWT_ISS, "sub": sub.lower(), "iat": now, "exp": now+ttl}
+    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+
+def decode_jwt(token:str):
+    return jwt.decode(token, JWT_SECRET, algorithms=["HS256"], options={"require":["exp","iat","sub"]})
 # --------------------------------------------------------------------------------------
 # App + CORS
 # --------------------------------------------------------------------------------------
