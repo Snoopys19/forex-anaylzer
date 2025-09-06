@@ -601,3 +601,20 @@ def api_scan(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=5057)
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
+from fastapi import Request
+
+# Serve the frontend from /
+app.mount("/", StaticFiles(directory="public", html=True), name="static")
+
+# Optional aliases so old paths still work
+@app.get("/scan")
+def _alias_scan(request: Request):
+    q = ("?" + request.url.query) if request.url.query else ""
+    return RedirectResponse(url="/api/scan" + q)
+
+@app.get("/ohlc")
+def _alias_ohlc(request: Request):
+    q = ("?" + request.url.query) if request.url.query else ""
+    return RedirectResponse(url="/api/ohlc" + q)
