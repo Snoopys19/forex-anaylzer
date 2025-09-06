@@ -618,3 +618,7 @@ def _alias_scan(request: Request):
 def _alias_ohlc(request: Request):
     q = ("?" + request.url.query) if request.url.query else ""
     return RedirectResponse(url="/api/ohlc" + q)
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 10000))  # Render gives PORT, default to 10000 for local
+    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)
