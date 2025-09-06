@@ -107,3 +107,10 @@
     <div class="field">
       <label>Timeframe</label>
       <div class="chip-group" id="tfChips">
+<button id="logoutBtn" style="margin-left:8px">Logout</button>
+<script>
+  document.getElementById('logoutBtn')?.addEventListener('click', async ()=>{
+    await fetch('/auth/logout', {method:'POST', credentials:'include'});
+    location.href = '/';
+  });
+</script>
