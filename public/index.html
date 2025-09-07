@@ -6,7 +6,7 @@
   <title>AstraFX • analyzer</title>
   <style>
     :root{
-      --fg:#f4f6fb; --muted:#ccd2e2; --pill:#a5b4fc; --accent:#7aa2f7; --shadow:rgba(0,0,0,.38);
+      --fg:#f4f6fb; --muted:#ccd2e2; --accent:#7aa2f7; --shadow:rgba(0,0,0,.38);
       --panel:rgba(14,18,34,.65); --border:rgba(255,255,255,.12);
     }
     *{box-sizing:border-box}
@@ -19,24 +19,40 @@
     .overlay{position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.58));}
 
     /* content */
-    main{position:relative; z-index:2; max-width:1100px; margin:0 auto; padding:22px; display:grid; gap:18px;}
+    main{position:relative; z-index:2; max-width:1400px; margin:0 auto; padding:22px; display:flex; flex-direction:column; gap:20px;}
 
     /* brand row above the video */
-    .brandRow{display:flex; align-items:center; justify-content:center; gap:14px; margin-top:8vh; text-align:center;}
-    .brandText{display:none; font-weight:900; font-size:42px; letter-spacing:.5px;}
-    .logo{height:84px; width:auto; display:block;}
-    .pill{background:rgba(165,180,252,.18); color:#e0e7ff; border:1px solid rgba(165,180,252,.35);
-      padding:6px 14px; border-radius:999px; font-weight:800; font-size:14px;}
+    .brandRow{display:flex; align-items:center; justify-content:center; gap:16px; margin-top:8vh; text-align:center;}
+    .brandText{display:none; font-weight:900; font-size:48px; letter-spacing:.5px;}
+    .logo{height:110px; width:auto; display:block;}
+    .pill{
+      background:rgba(165,180,252,.18); color:#e0e7ff; border:1px solid rgba(165,180,252,.35);
+      padding:8px 16px; border-radius:999px; font-weight:800; font-size:16px;
+    }
 
-    /* big centered video placeholder */
-    .embed{max-width:980px; margin:8px auto 0 auto; background:var(--panel); border:1px solid var(--border);
-      border-radius:14px; padding:16px; box-shadow:0 10px 30px var(--shadow);}
-    .embed .box{position:relative; width:100%; padding-top:56.25%; border-radius:10px; background:rgba(0,0,0,.28);
-      border:1px dashed rgba(255,255,255,.25); display:grid; place-items:center; color:var(--muted); font-weight:600;}
+    /* large centered video placeholder */
+    .embed{
+      width:min(96vw, 1280px);
+      margin:0 auto;
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:14px; padding:16px; box-shadow:0 10px 30px var(--shadow);
+    }
+    .embed .box{
+      position:relative; width:100%; padding-top:56.25%;
+      border-radius:10px; background:rgba(0,0,0,.28);
+      border:1px dashed rgba(255,255,255,.25); display:grid; place-items:center; color:var(--muted); font-weight:600;
+    }
 
-    /* signup card now below video */
-    .card{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px;
-      box-shadow:0 10px 30px var(--shadow);}
+    /* cards */
+    .card{
+      width:min(96vw, 900px);
+      margin:0 auto;
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:14px; padding:16px; box-shadow:0 10px 30px var(--shadow);
+    }
+    /* narrow signup card */
+    #signupCard{ width:min(92vw, 420px); }
+
     label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px;}
     input{width:100%; background:rgba(0,0,0,.35); border:1px solid var(--border); color:var(--fg);
       border-radius:10px; padding:10px 12px; outline:none;}
@@ -45,11 +61,6 @@
       background:var(--accent); color:#0b0f1c;}
     .btn.ghost{background:rgba(255,255,255,.08); color:var(--fg); border:1px solid var(--border);}
     .hint{color:var(--muted); font-size:12px;}
-    .footer{margin-top:10px; display:flex; justify-content:space-between; align-items:center; gap:10px;}
-
-    /* info grid at bottom */
-    .grid{display:grid; grid-template-columns:1fr; gap:18px;}
-    @media (min-width:900px){ .grid{grid-template-columns:1fr 1fr;} }
   </style>
 </head>
 <body>
@@ -58,54 +69,51 @@
     <div class="overlay"></div>
 
     <main>
-      <!-- Brand row: shows your logo if present, otherwise text "AstraFX"; pill stays -->
+      <!-- Brand row: uses your logo if present; otherwise falls back to text "AstraFX" -->
       <div class="brandRow">
         <img class="logo" src="assets/logo.png" alt="AstraFX" onerror="this.style.display='none';document.querySelector('.brandText').style.display='inline-block';">
         <div class="brandText">AstraFX</div>
         <span class="pill">analyzer</span>
       </div>
 
-      <!-- Larger centered video placeholder -->
+      <!-- LARGE centered video placeholder -->
       <section class="embed">
-        <div class="row" style="margin-bottom:8px;">
+        <div class="row" style="margin-bottom:8px; justify-content:space-between;">
           <div style="font-weight:800;">Featured video</div>
           <div class="hint">Placeholder — paste your embed later</div>
         </div>
         <div class="box">16:9 video placeholder</div>
       </section>
 
-      <!-- Sign up / Login (below video) -->
+      <!-- 1) What is AstraFX? -->
+      <section class="card">
+        <div style="font-weight:800; margin-bottom:6px;">What is AstraFX?</div>
+        <div class="hint">
+          Scan multiple pairs and time frames for strategy setups. The scan will be completed on the major currency
+          pairs and gold. (EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, NZD/USD, XAU/USD)
+        </div>
+      </section>
+
+      <!-- 2) Create account / Login (narrow) -->
       <section class="card" id="signupCard">
         <div class="row" style="margin-bottom:12px;">
           <div style="font-weight:800;">Create account / Login</div>
-          <div class="hint">Sign up to get AstraFX access & updates.</div>
+          <div class="hint">Sign up to get access & updates.</div>
         </div>
         <label>Email</label>
         <input id="email" type="email" placeholder="you@domain.com" />
-        <div class="footer">
-          <div class="row">
-            <button class="btn" id="signupBtn">Create account</button>
-            <button class="btn ghost" id="loginBtn" type="button">Login</button>
-          </div>
-          <!-- No "Continue to app" button per your request -->
+        <div class="row" style="margin-top:10px;">
+          <button class="btn" id="signupBtn">Create account</button>
+          <button class="btn ghost" id="loginBtn" type="button">Login</button>
         </div>
         <div id="msg" class="hint" style="margin-top:10px;"></div>
       </section>
 
-      <!-- Bottom info boxes -->
-      <section class="grid">
-        <div class="card">
-          <div style="font-weight:800; margin-bottom:6px;">What is AstraFX?</div>
-          <div class="hint">
-            Scan multiple pairs and time frames for strategy setups. The scan will be completed on the major currency
-            pairs and gold. (EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, NZD/USD, XAU/USD)
-          </div>
-        </div>
-        <div class="card">
-          <div style="font-weight:800; margin-bottom:6px;">Privacy</div>
-          <div class="hint">
-            Your email will never be given out or sold to any third parties and will only be used for this website.
-          </div>
+      <!-- 3) Privacy -->
+      <section class="card">
+        <div style="font-weight:800; margin-bottom:6px;">Privacy</div>
+        <div class="hint">
+          Your email will never be given out or sold to any third parties and will only be used for this website.
         </div>
       </section>
     </main>
