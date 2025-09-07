@@ -5,55 +5,99 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AstraFX — Sign in</title>
   <style>
-    :root { --bg:#0b0f16; --card:#0f1623; --accent:#f97316; --text:#e6edf3; --muted:#98a2b3; }
+    :root { --bg:#0b0f16; --card:#0f1623; --accent:#f97316; --text:#e6edf3; --muted:#cbd5e1; }
     *{box-sizing:border-box} body{margin:0;font:16px/1.5 system-ui,Segoe UI,Roboto;background:var(--bg);color:var(--text)}
-    .wrap{max-width:1080px;margin:0 auto;padding:32px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
-    h1{margin:0;font-weight:800;letter-spacing:.5px}
-    .pill{background:#101826;border:1px solid #1e293b;border-radius:999px;padding:6px 10px;color:var(--muted);font-size:12px}
-    .grid{display:grid;grid-template-columns: 1.3fr .9fr; gap:24px}
-    .card{background:var(--card);border:1px solid #1f2a3a;border-radius:16px;padding:18px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-    .video{aspect-ratio:16/9;background:#0c1320;border:1px dashed #213146;border-radius:12px;display:grid;place-items:center;color:var(--muted)}
-    label{display:block;margin:12px 0 6px;color:var(--muted);font-size:13px}
+
+    /* Fullscreen background video */
+    .bgvideo{
+      position:fixed; inset:0; width:100%; height:100%;
+      object-fit:cover; z-index:-2;
+      background:#0b0f16;
+    }
+    /* Darken overlay so text is readable */
+    .shade{
+      position:fixed; inset:0; z-index:-1;
+      background:linear-gradient(180deg, rgba(4,7,12,.60), rgba(4,7,12,.75));
+    }
+
+    .wrap{max-width:1100px;margin:0 auto;padding:28px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{margin:0;font-weight:900;letter-spacing:.5px; font-size:42px;} /* larger title */
+    .pill{background:rgba(16,24,39,.75);backdrop-filter:blur(6px);
+      border:1px solid #1e293b;border-radius:999px;padding:8px 12px;
+      color:var(--muted);font-size:13px}
+
+    .center{display:flex;justify-content:center}
+    .stack{width:min(880px,100%);display:flex;flex-direction:column;gap:18px}
+
+    .card{
+      background:rgba(15,22,35,.70);
+      border:1px solid rgba(30,41,59,.8);
+      border-radius:16px;padding:18px;
+      box-shadow:0 12px 36px rgba(0,0,0,.35);
+      backdrop-filter: blur(8px);
+    }
+
+    .video-box{
+      aspect-ratio:16/9;
+      background:#0c1320;
+      border:1px dashed #213146;border-radius:12px;
+      display:grid;place-items:center;color:var(--muted);
+      font-size:15px;
+    }
+
+    label{display:block;margin:12px 0 6px;color:#b6c2d0;font-size:13px}
     input{width:100%;padding:12px;border-radius:10px;border:1px solid #233249;background:#0b1422;color:var(--text)}
-    .row{display:flex;gap:10px}
-    .btn{background:var(--accent);border:1px solid #cf5a0f;color:#111;padding:12px 14px;border-radius:12px;font-weight:700;cursor:pointer}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{background:var(--accent);border:1px solid #cf5a0f;color:#111;padding:12px 14px;border-radius:12px;font-weight:800;cursor:pointer}
     .btn.secondary{background:#111;color:#e6edf3;border:1px solid #2a3548}
-    .muted{color:var(--muted);font-size:13px;margin-top:8px}
+    .muted{color:#a8b3c3;font-size:13px;margin-top:8px}
     .err{color:#ef4444;font-size:13px;margin-top:8px;display:none}
   </style>
 </head>
 <body>
+  <!-- Fullscreen background video -->
+  <video class="bgvideo" autoplay muted loop playsinline poster="" preload="auto">
+    <source src="/landing.mp4" type="video/mp4" />
+  </video>
+  <div class="shade"></div>
+
   <div class="wrap">
     <header>
-      <div style="display:flex;align-items:center;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px">
         <h1>AstraFX</h1><span class="pill">Analyzer</span>
       </div>
       <div class="pill">Secure Login Required</div>
     </header>
 
-    <div class="grid">
-      <section class="card">
-        <h2 style="margin:4px 0 12px">Intro Video (Coming Soon)</h2>
-        <div class="video">Video placeholder — add your embed later</div>
-        <p class="muted">This is a placeholder — we’ll drop your YouTube/Vimeo/MP4 embed here later.</p>
-      </section>
+    <div class="center">
+      <div class="stack">
 
-      <aside class="card">
-        <h3 style="margin:0 0 12px">Sign in to continue</h3>
-        <form id="authForm">
-          <label>Email</label>
-          <input id="email" type="email" placeholder="you@example.com" required />
-          <label>Password</label>
-          <input id="password" type="password" placeholder="••••••••" required />
-          <div class="row" style="margin-top:12px">
-            <button class="btn" type="submit">Log in</button>
-            <button class="btn secondary" type="button" id="signupBtn">Create account</button>
-          </div>
-          <div id="msg" class="err"></div>
-          <div class="muted">Your session is secured with an HttpOnly cookie.</div>
-        </form>
-      </aside>
+        <!-- Larger, centered video placeholder card (use later for a foreground promo if you want) -->
+        <section class="card">
+          <h2 style="margin:4px 0 10px">Intro Video (Coming Soon)</h2>
+          <div class="video-box">Foreground video placeholder — background is playing</div>
+          <p class="muted">Tip: replace this box with a YouTube/Vimeo embed later, or remove it entirely if the background video is enough.</p>
+        </section>
+
+        <!-- Sign in card under the video -->
+        <aside class="card">
+          <h3 style="margin:0 0 12px">Sign in to continue</h3>
+          <form id="authForm">
+            <label>Email</label>
+            <input id="email" type="email" placeholder="you@example.com" required />
+            <label>Password</label>
+            <input id="password" type="password" placeholder="••••••••" required />
+            <div class="row" style="margin-top:12px">
+              <button class="btn" type="submit">Log in</button>
+              <button class="btn secondary" type="button" id="signupBtn">Create account</button>
+            </div>
+            <div id="msg" class="err"></div>
+            <div class="muted">Your session is secured with an HttpOnly cookie.</div>
+          </form>
+        </aside>
+
+      </div>
     </div>
   </div>
 
