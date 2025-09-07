@@ -1,0 +1,5 @@
+fastapi==0.111.0
+uvicorn==0.30.0
+gunicorn==21.2.0
+requests==2.32.3
+aiofiles==23.2.1
