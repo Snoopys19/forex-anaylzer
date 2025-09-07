@@ -157,4 +157,32 @@
     });
   </script>
 </body>
-</html>
+</html><!-- Paste this at the bottom of your existing public/index.html -->
+<script>
+  const $ = (id) => document.getElementById(id);
+  async function postJSON(url, data){
+    const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+    const js = await res.json().catch(()=>({}));
+    return {ok: res.ok, status: res.status, json: js};
+  }
+  // SIGNUP -> cookie -> /app
+  if (document.getElementById('signupBtn')) {
+    $('signupBtn').addEventListener('click', async () => {
+      const email = $('email')?.value?.trim() || '';
+      if(!email){ if($('msg')) $('msg').textContent = 'Please enter your email.'; return; }
+      const {ok, json} = await postJSON('/api/signup', {email});
+      if(ok){ window.location.href = '/app/'; return; }
+      if($('msg')) $('msg').textContent = (json.detail || 'Signup failed.');
+    });
+  }
+  // LOGIN -> cookie -> /app
+  if (document.getElementById('loginBtn')) {
+    $('loginBtn').addEventListener('click', async () => {
+      const email = $('email')?.value?.trim() || '';
+      if(!email){ if($('msg')) $('msg').textContent = 'Please enter your email.'; return; }
+      const {ok, json} = await postJSON('/api/login', {email});
+      if(ok){ window.location.href = '/app/'; return; }
+      if($('msg')) $('msg').textContent = (json.detail || 'Login failed.');
+    });
+  }
+</script>
