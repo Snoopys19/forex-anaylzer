@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AstraFX — Strategy Tester</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0a0c12;--bg-elev:#0d1119;--surface:#0e1420;--card:#101828;--text:#e7eef7;--sub:#b5c3d6;--muted:#7f8fa3;--border:#1e2a3d;--blue:#1e90ff;--orange:#f97316;--green:#10b981;--red:#ef4444;--radius:18px;--shadow-1:0 10px 30px rgba(0,0,0,.35);--shadow-2:0 20px 60px rgba(0,0,0,.5);--mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--sans:'Inter',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    *{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:var(--sans);color:var(--text);background:radial-gradient(1000px 600px at 70% -20%,color-mix(in srgb,var(--orange) 12%,transparent),transparent),radial-gradient(900px 400px at -10% 20%,color-mix(in srgb,var(--blue) 20%,transparent),transparent),linear-gradient(180deg,var(--bg),#07090e)}
+    .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.75)),url('https://images.pexels.com/photos/7054384/pexels-photo-7054384.jpeg?auto=compress&cs=tinysrgb&w=1600') center/cover no-repeat}
+    .hero::after{content:'';position:absolute;inset:0;background:radial-gradient(80% 80% at 70% 10%,color-mix(in srgb,var(--blue) 18%,transparent),transparent 70%);mix-blend-mode:screen;opacity:.8;pointer-events:none}
+    .topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px}
+    .brand{display:flex;align-items:center;gap:12px}.logo{width:34px;height:34px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45))}.brand-name{font-weight:800;letter-spacing:.3px;font-size:1.2rem}.accent{color:var(--blue)}
+    .hero-inner{padding:54px 20px 28px;max-width:1200px;margin:0 auto}.hero h1{font-size:clamp(28px,5vw,54px);margin:0 0 10px;line-height:1.05}.hero p{margin:0 0 18px;font-size:clamp(14px,2vw,18px);color:var(--sub)}
+    .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin:22px 0}
+    .btn{border:1px solid var(--border);background:linear-gradient(180deg,color-mix(in srgb,var(--bg-elev) 60%,transparent),transparent);color:var(--text);padding:14px 18px;border-radius:14px;font-weight:800;letter-spacing:.2px;cursor:pointer;transition:transform .08s ease,box-shadow .2s ease,background .2s ease}
+    .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-1)}.btn.jumbo{font-size:1.05rem;padding:16px 22px;background:radial-gradient(120% 120% at 20% 0%,color-mix(in srgb,var(--blue) 50%,transparent),transparent),linear-gradient(180deg,color-mix(in srgb,var(--blue) 30%,transparent),color-mix(in srgb,var(--orange) 20%,transparent));border:none}
+    .btn.jumbo.alt{background:radial-gradient(160% 160% at 20% 0%,color-mix(in srgb,var(--orange) 45%,transparent),transparent),linear-gradient(180deg,color-mix(in srgb,var(--orange) 35%,transparent),color-mix(in srgb,var(--blue) 20%,transparent))}
+    .subtle{color:var(--muted);font-size:.9rem}
+
+    .bar{display:grid;gap:12px;grid-template-columns:auto auto auto auto 1fr auto;align-items:center;margin:10px 18px}
+    .field{display:grid;gap:6px}
+    input[type="number"],input[type="text"],select{padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+    /* Match UDC select and menu fonts to other dropdowns */
+    /*
+      The UDC dropdown should mirror the appearance of native <select> controls
+      used for the Strategy, Pattern and Proprietary Strategy fields. Instead
+      of inheriting automatically, we explicitly set the same font family,
+      size, weight and padding as the native selects. This ensures the
+      "Select" label and subsequent selections appear identical in style
+      and height. Similarly, the checklist entries inside the UDC menu use
+      the same font sizing as options in the Strategy dropdown. The width
+      remains unchanged to preserve existing layout.
+    */
+    #udcDisplay{
+      font-family:var(--sans);
+      font-size:0.9rem;
+      line-height:1.2;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:var(--card);
+      color:var(--text);
+      height:auto;
+    }
+    #udcDisplay span{
+      font-family:var(--sans);
+      font-size:0.9rem;
+      font-weight:400;
+    }
+    #udcMenu,
+    #udcMenu *{
+      font-family:var(--sans);
+      font-size:0.9rem;
+      font-weight:400;
+    }
+    #udcMenu label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      white-space:nowrap;
+    }
+    #udcMenu{
+      position:absolute;
+      top:100%;
+      left:0;
+      z-index:1000;
+      margin-top:4px;
+      background:var(--card);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:12px;
+      max-height:260px;
+      overflow:auto;
+      white-space:nowrap;
+      width:max-content;
+      min-width:100%;
+      padding:8px;
+      display:none;
+    }
+    .toggle{display:flex;gap:10px}.opt{padding:10px 14px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:inherit;font-weight:800;cursor:pointer}
+    .opt.active{outline:2px solid color-mix(in srgb,var(--orange) 45%,transparent)}
+
+    .filters{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;margin:0 18px;border-radius:16px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 80%,transparent),transparent);border:1px solid var(--border)}
+    .chip-group{display:flex;gap:10px;flex-wrap:wrap}.chip{border:1px solid var(--border);background:color-mix(in srgb,var(--card) 70%,transparent);color:inherit;padding:10px 14px;border-radius:999px;font-weight:800;cursor:pointer}.chip-active{outline:2px solid color-mix(in srgb,var(--blue) 45%,transparent)}
+
+    .watchlist{display:flex;flex-wrap:wrap;gap:8px}
+    .wl{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text);font-weight:800}
+    .wl.active{outline:2px solid color-mix(in srgb,var(--orange) 45%,transparent)}
+    .chip.disabled,.wl.disabled,.opt.disabled{opacity:.45;pointer-events:none}
+
+    .grid{display:grid;gap:18px;padding:18px;margin:0;grid-template-columns:repeat(12,1fr)}
+    @media (max-width:1200px){.grid{grid-template-columns:repeat(9,1fr)}}
+    @media (max-width:900px){.grid{grid-template-columns:repeat(6,1fr)}}
+    @media (max-width:640px){.grid{grid-template-columns:repeat(1,1fr)}}
+
+    .card{grid-column:span 6;border:1px solid var(--border);border-radius:18px;padding:16px;background:radial-gradient(140% 120% at 0% 0%,color-mix(in srgb,var(--blue) 8%,transparent),transparent),radial-gradient(140% 120% at 100% 100%,color-mix(in srgb,var(--orange) 10%,transparent),transparent),var(--card);box-shadow:var(--shadow-1);display:grid;gap:12px}
+    .card-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .pair{display:flex;gap:10px;align-items:baseline}.pair .sym{font-weight:800;font-size:1.2rem}.pair .tf{font-weight:700;color:var(--muted)}
+    .score{--val:75;--col:var(--blue);width:58px;height:58px;border-radius:50%;background:conic-gradient(var(--col) calc(var(--val)*1%), color-mix(in srgb, var(--col) 15%, #000) 0 100%);display:grid;place-items:center;color:var(--text);font-weight:800;font-size:.95rem;border:2px solid color-mix(in srgb,var(--col) 30%, transparent)}
+    .score.good{--col:var(--blue)}.score.ok{--col:#f59e0b}.score.bad{--col:#ef4444}
+    .tags{display:flex;gap:8px;flex-wrap:wrap}.tag{font-family:var(--mono);font-size:.8rem;padding:6px 10px;border-radius:999px;border:1px dashed var(--border);color:#c6d2e0;background:rgba(255,255,255,.02)}
+    .card-body{display:grid;gap:12px;grid-template-columns: 1fr 1fr;align-items:stretch}
+    .levels{display:grid;gap:10px;grid-template-columns:repeat(1,1fr);font-family:var(--mono)}
+    .levels .box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px}.levels .label{color:var(--muted);font-size:.78rem}.levels .val{font-weight:800}
+    .chart-wrap{border:1px solid var(--border);border-radius:12px;background:var(--surface);position:relative;height:280px}
+    .chart{width:100%;height:100%;display:block;border-radius:12px}
+    .chart-badge{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.5);color:#fff;font-size:.7rem;border-radius:999px;padding:4px 8px;border:1px solid rgba(255,255,255,.1)}
+    .actions{display:flex;gap:12px;flex-wrap:wrap}
+    .btn.primary{border:none;background:radial-gradient(110% 110% at 20% 0%,color-mix(in srgb,var(--blue) 55%,transparent),transparent),linear-gradient(180deg,color-mix(in srgb,var(--blue) 35%,transparent),color-mix(in srgb,var(--orange) 18%,transparent))}
+    .btn.alt{border:none;background:radial-gradient(110% 110% at 20% 0%,color-mix(in srgb,var(--orange) 55%,transparent),transparent),linear-gradient(180deg,color-mix(in srgb,var(--orange) 35%,transparent),color-mix(in srgb,var(--blue) 18%,transparent))}
+
+    .footer{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;margin:0 18px 18px;color:var(--muted)}
+
+    dialog#copyDlg{border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--text);width:min(680px,90vw)}
+    .copy-body{padding:14px}
+    .copy-text{width:100%;min-height:80px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:10px;font-family:var(--mono)}
+  </style>
+</head>
+<body>
+<header class="hero">
+    <nav class="topnav">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <rect width="64" height="64" rx="10" fill="#0a0c12"/>
+          <rect x="10" y="22" width="8" height="28" rx="2" fill="#1e90ff"/>
+          <rect x="22" y="16" width="8" height="34" rx="2" fill="#0ea5e9"/>
+          <rect x="34" y="24" width="8" height="26" rx="2" fill="#f97316"/>
+          <rect x="46" y="18" width="8" height="32" rx="2" fill="#1e90ff"/>
+        </svg>
+        <span class="brand-name">Astra<span class="accent">FX</span></span>
+      </div>
+      <div class="nav-actions">
+        <button class="btn" id="openSettings">Contract Settings</button>
+        <button class="btn" id="openJournal">Trade Journal</button>
+      <button class="btn" id="btnStrategyTester">Strategy Tester</button>
+      </div>
+    </nav>
+    <div class="hero-inner">
+      <h1>Strategy Tester <span class="accent">(Up to the last 30 days)</span></h1>
+<div class="cta-row right"><a class="btn" href="/app/index.html">Back to Scanner</a><a class="btn alt" href="/app/journal.html">Trade Journal</a></div>
+      <p>Live chart scans on demand, Clean Entry, SL/TP, and pip value based on your desired risk.</p>
+      
+    </div>
+  </header>
+
+<section class="bar">
+  <div class="field">
+    <label>Pairs</label>
+    <select id="pairSelect" style="width:280px;">
+      <option value="EURUSD">EURUSD</option>
+      <option value="GBPUSD">GBPUSD</option>
+      <option value="USDJPY">USDJPY</option>
+      <option value="AUDUSD">AUDUSD</option>
+      <option value="USDCAD">USDCAD</option>
+      <option value="USDCHF">USDCHF</option>
+      <option value="NZDUSD">NZDUSD</option>
+      <option value="XAUUSD">XAUUSD</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Timeframe</label>
+    <select id="tfSelect" style="width:180px;">
+      <option value="M15">M15</option>
+      <option value="M30">M30</option>
+      <option value="H1" selected>H1</option>
+      <option value="H4">H4</option>
+      <option value="D1">D1</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Lookback</label>
+    <select id="lookback" style="width:180px;">
+      <option value="30" selected>30 days</option>
+      <option value="14">14 days</option>
+      <option value="7">7 days</option>
+      <option value="3">3 days</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Min Score</label>
+    <input id="minScore" class="input" type="number" value="70" style="width:120px" />
+  </div>
+  <div class="field">
+    <label>Exit Rule</label>
+    <select id="exitRule" style="width:140px;">
+      <option>TP1</option>
+      <option>TP2</option>
+      <option>TP3</option>
+    </select>
+  </div>
+  <div class="field" style="display:flex;align-items:flex-end">
+    <button class="btn" id="runBtn">Run Test</button>
+  </div>
+</section>
+
+<section class="filters">
+  <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+    <label style="display:grid;gap:6px"><span>Strategy</span>
+      <select id="strategySelect" style="width:280px;">
+        <option value="">- None -</option>
+        <option value="donchian20">Donchian 20 Break</option>
+        <option value="ema20_50">EMA20 50</option>
+        <option value="ichimoku">Ichimoku</option>
+        <option value="orb_london">ORB London</option>
+        <option value="rsi2">RSI2</option>
+      </select>
+    </label>
+    <label style="display:grid;gap:6px"><span>Pattern</span>
+      <select id="patternSelect" style="width:220px;">
+        <option value="">- None -</option>
+        <option value="pinbar">Pin Bar</option>
+        <option value="engulfing">Engulfing</option>
+        <option value="insidebar">Inside Bar</option>
+        <option value="NR7">NR7</option>
+        <option value="donchian20">Donchian</option>
+        <option value="rsi">RSI Pullback</option>
+      </select>
+    </label>
+    <label style="display:grid;gap:6px"><span>AstraFX Proprietary Strategies</span>
+      <select id="propSelect" style="width:260px;">
+        <option value="">Select</option>
+        <option value="astra1">AstraFX Strategy #1</option>
+      </select>
+    </label>
+
+    <label style="display:grid;gap:6px"><span>User Defined Confluence</span>
+      <div id="udcWrapper" class="select" style="position:relative; width:320px; padding:0">
+        <button id="udcDisplay" class="btn" style="width:100%; text-align:left; background:transparent; border:none; padding:12px">
+          <span id="udcLabel">Select</span><span style="float:right;pointer-events:none">▾</span>
+        </button>
+        <div id="udcMenu" class="panel" style="display:none; position:absolute; left:0; top:100%; width:100%; z-index:1100; padding:8px;">
+          <div style="max-height:280px; overflow:auto; display:grid; gap:8px">
+            <label><input type="checkbox" value="trend_and_structure"> Trend and structure</label>
+            <label><input type="checkbox" value="d1_h4_bias"> D1/H4 bias</label>
+            <label><input type="checkbox" value="ema20_50_slope"> 20/50 EMA slope/stack</label>
+            <label><input type="checkbox" value="location"> Location</label>
+            <label><input type="checkbox" value="htf_sr"> HTF S/R</label>
+            <label><input type="checkbox" value="supply_demand"> Supply - Demand zones</label>
+            <label><input type="checkbox" value="fib_overlap"> FIB overlap</label>
+            <label><input type="checkbox" value="round_levels"> Round levels</label>
+            <label><input type="checkbox" value="prior_day_hilo"> Prior day high or low</label>
+            <label><input type="checkbox" value="classic_pivots"> Classic pivots</label>
+            <label><input type="checkbox" value="liq_imbalance"> Liquidity & Imbalance</label>
+            <label><input type="checkbox" value="liquidity_sweep"> Liquidity sweep</label>
+            <label><input type="checkbox" value="fair_value_gap"> Fair Value Gap</label>
+            <label><input type="checkbox" value="momentum"> Momentum Confirmation</label>
+            <label><input type="checkbox" value="pinbar"> Pinbar</label>
+            <label><input type="checkbox" value="engulfing"> Engulfing</label>
+            <label><input type="checkbox" value="hammer_shooting_star"> Hammer / Shooting star</label>
+            <label><input type="checkbox" value="morning_evening_star"> Morning star / Evening star</label>
+            <label><input type="checkbox" value="hanging_man"> Hanging man</label>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:8px">
+            <button class="btn" id="udcApply">Apply</button>
+            <button class="btn alt" id="udcClear">Clear</button>
+          </div>
+        </div>
+      </div>
+    </label>
+  </div>
+</section>
+
+<section class="panel">
+  <div style="display:flex;align-items:center;gap:16px">
+    <strong>Summary</strong>
+    <div id="status" class="subtle">Idle</div>
+    <div style="height:6px;background:#111;border:1px solid var(--border);border-radius:6px;overflow:hidden;width:240px">
+      <div id="progbar" style="height:100%;width:0;background:var(--accent)"></div>
+    </div>
+    <div style="flex:1"></div>
+    <button id="csvBtn" class="btn">Download CSV</button>
+  </div>
+  <div id="summary" style="margin-top:10px"></div>
+</section>
+
+<section class="panel">
+  <strong>RESULTS</strong>
+  <div id="resultCard" class="grid" style="grid-template-columns:1fr;gap:8px;margin-top:8px"></div>
+</section>
+
+<section class="panel" style="display:none"><strong>Per Pair</strong><table id="pairTable"><thead><tr><th>Pair</th><th>Trades</th><th>Wins</th><th>Losses</th><th>Timeouts</th></tr></thead><tbody></tbody></table></section>
+
+<script>
+function activeGroupFilter(){
+  const s = document.getElementById('strategySelect').value;
+  const p = document.getElementById('patternSelect').value;
+  const r = document.getElementById('propSelect').value;
+  const udcChosen = Array.from(document.querySelectorAll('#udcMenu input[type=checkbox]:checked')).map(cb=>cb.value);
+  if (s) return {group:'strategy', key:s};
+  if (p) return {group:'pattern', key:p};
+  if (r) return {group:'proprietary', key:r};
+  if (udcChosen.length) return {group:'udc', key:udcChosen.slice().sort().join(',')};
+  return null;
+};
+  if (p) return {group:'pattern', key:p};
+  if (r) return {group:'proprietary', key:r};
+  return null;
+}
+
+function prettyGroup(g){
+  if (g==='udc') return 'User Defined Confluence';
+  if (g==='strategy') return 'STRATEGY';
+  if (g==='pattern') return 'PATTERN';
+  if (g==='proprietary') return 'PROPRIETARY';
+  return g || '';
+}
+function currentUDCLabel(){
+  return document.getElementById('udcLabel') ? document.getElementById('udcLabel').textContent : '';
+}
+function renderResultCard(data){
+  const card = document.getElementById('resultCard');
+  const af = activeGroupFilter();
+  const tf = document.getElementById('tfSelect').value;
+  const exitRule = document.getElementById('exitRule').value;
+  const minScore = parseInt(document.getElementById('minScore').value,10) || 0;
+  const lookbackDays = parseInt(document.getElementById('lookback').value,10) || 0;
+  const pairSel = document.getElementById('pairSelect').value;
+  const pairStats = (data.per_pair && data.per_pair[pairSel]) ? data.per_pair[pairSel] : {total:data.total||0,wins:data.wins||0,losses:data.losses||0,timeouts:data.timeouts||0};
+
+  let signalText = '';
+  if (af){
+    if (af.group==='udc'){
+      signalText = currentUDCLabel();
+    } else {
+      const entries = Object.entries(data.per_signal||{});
+      if (entries.length){
+        const v = entries[0][1];
+        signalText = v.name || entries[0][0];
+      }
+    }
+  }
+
+  card.innerHTML = ''
+    + '<div><strong>Group:</strong> ' + (af ? prettyGroup(af.group) : '') + '</div>'
+    + '<div><strong>Signal:</strong> ' + (signalText || '-') + '</div>'
+    + '<div><strong>Timeframe:</strong> ' + tf + '</div>'
+    + '<div><strong>Exit Rule:</strong> ' + exitRule + '</div>'
+    + '<div><strong>Min Score:</strong> ' + minScore + '</div>'
+    + '<div><strong>Look back:</strong> ' + lookbackDays + ' days</div>'
+    + '<br/>'
+    + '<div><strong>Pair:</strong> ' + (pairSel||'-') + '</div>'
+    + '<div><strong>Trades:</strong> ' + (pairStats.total||0) + '</div>'
+    + '<div><strong>Wins:</strong> ' + (pairStats.wins||0) + '</div>'
+    + '<div><strong>Losses:</strong> ' + (pairStats.losses||0) + '</div>'
+    + '<div><strong>Win%:</strong> ' + (pairStats.total ? ((pairStats.wins/pairStats.total)*100).toFixed(1) : '0.0') + '%</div>';
+}
+
+function filterResults(data){
+  const af = activeGroupFilter();
+  if (!af) return data;
+  const out = JSON.parse(JSON.stringify(data));
+
+  // UDC: totals direct
+  if (af.group === 'udc') return out;
+// Exclusivity & UDC menu
+function setFiltersState(){
+  const strategySel = document.getElementById('strategySelect');
+  const patternSel  = document.getElementById('patternSelect');
+  const propSel     = document.getElementById('propSelect');
+  const udcDisplay  = document.getElementById('udcDisplay');
+  const udcChecks   = Array.from(document.querySelectorAll('#udcMenu input[type=checkbox]'));
+
+  const s = strategySel.value;
+  const p = patternSel.value;
+  const r = propSel.value;
+  const udcChosen = udcChecks.some(cb => cb.checked);
+
+  if (s){ patternSel.value = ""; propSel.value = ""; if (udcChosen){ udcChecks.forEach(c=>c.checked=false); document.getElementById('udcLabel').textContent='Select'; } }
+  if (p){ strategySel.value = ""; propSel.value = ""; if (udcChosen){ udcChecks.forEach(c=>c.checked=false); document.getElementById('udcLabel').textContent='Select'; } }
+  if (r){ strategySel.value = ""; patternSel.value = ""; if (udcChosen){ udcChecks.forEach(c=>c.checked=false); document.getElementById('udcLabel').textContent='Select'; } }
+
+  const lockAll = udcChosen;
+  strategySel.disabled = lockAll || !!p || !!r;
+  patternSel.disabled  = lockAll || !!s || !!r;
+  propSel.disabled     = lockAll || !!s || !!p;
+  udcDisplay.disabled  = !!s || !!p || !!r;
+
+  if (!s && !p && !r && !udcChosen){
+    strategySel.disabled = false;
+    patternSel.disabled  = false;
+    propSel.disabled     = false;
+    udcDisplay.disabled  = false;
+  }
+
+function udcOpen(){
+  const menu = document.getElementById('udcMenu');
+  menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
+}
+function udcApply(){
+  const selected = Array.from(document.querySelectorAll('#udcMenu input[type=checkbox]:checked')).map(cb=>cb.parentElement.textContent.trim());
+  document.getElementById('udcLabel').textContent = selected.length ? selected.join(', ') : 'Select';
+  document.getElementById('udcMenu').style.display = 'none';
+  setFiltersState();
+}
+function udcClear(){
+  document.querySelectorAll('#udcMenu input[type=checkbox]').forEach(cb=>cb.checked=false);
+  document.getElementById('udcLabel').textContent = 'Select';
+  setFiltersState();
+}
+function getUDCValues(){
+  return Array.from(document.querySelectorAll('#udcMenu input[type=checkbox]:checked')).map(cb=>cb.value);
+}
+function getMultiSelectValues(sel){
+  return Array.from(sel.selectedOptions).map(o=>o.value);
+}
+let __lastResult = null;
+function downloadCSV(filename, rows){
+  const process = rows.map(r => r.map(v => '"'+String(v).replaceAll('"','""')+'"').join(','));
+  const blob = new Blob([process.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function exportCSV(data){
+  const rows = [['Signal','Group','Trades','Wins','Losses','Timeouts','Win%']];
+  const ps = data.per_signal || {};
+  for(const [k,v] of Object.entries(ps)){
+    const wr = v.total ? ((v.wins/v.total)*100).toFixed(1) : '0.0';
+    rows.push([v.name||k, v.group||'', v.total||0, v.wins||0, v.losses||0, v.timeouts||0, wr]);
+  }
+  downloadCSV('strategy_tester_per_signal.csv', rows);
+}
+async function runTest(){
+  const status = document.getElementById('status');
+  status.textContent = 'Running…';
+  const pb = document.getElementById('progbar'); pb.style.width='5%';
+  const timer = setInterval(()=>{ let w=parseFloat(pb.style.width)||5; w=Math.min(w+7, 90); pb.style.width=w+'%'; }, 350);
+
+  const pairSel = document.getElementById('pairSelect'); 
+  const pairs = pairSel.value ? [pairSel.value] : []; 
+  if(!pairs.length){ clearInterval(timer); pb.style.width='0%'; status.textContent='Idle'; return alert('Please choose at least one pair.');}
+  const payload = {
+    pairs,
+    timeframes: [document.getElementById('tfSelect').value],
+    lookbackDays: parseInt(document.getElementById('lookback').value,10),
+    min_score: parseInt(document.getElementById('minScore').value,10),
+    filters: {
+      strategy: (document.getElementById('strategySelect').value ? [document.getElementById('strategySelect').value] : []),
+      pattern:  (document.getElementById('patternSelect').value ? [document.getElementById('patternSelect').value] : []),
+      proprietary: (document.getElementById('propSelect').value ? [document.getElementById('propSelect').value] : []),
+      udc: getUDCValues()
+    },
+    outcomeBars: 200,
+    exitRule: document.getElementById('exitRule').value
+  };
+
+  try{
+    const res = await fetch('/api/backtest', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    let data = await res.json(); data = filterResults(data); __lastResult = data;
+    status.textContent = 'Done'; clearInterval(timer); pb.style.width='100%';
+    renderSummary(data); renderTables(data); renderResultCard(data);
+  } catch(e) {
+    status.textContent = 'Error'; clearInterval(timer);
+    alert('Backtest failed: '+e.message);
+  }
+}
+function renderSummary(d){
+  document.getElementById('summary').innerHTML = '';
+}
+function renderTables(d){
+  const st = document.querySelector('#sigTable tbody');
+  const rows = Object.entries(d.per_signal||{}).map(function([k,v]){
+    const wr = v.total ? ((v.wins/v.total)*100).toFixed(1)+'%' : '—';
+    return '<tr><td>'+(v.name||k)+'</td><td>'+v.group+'</td><td>'+v.total+'</td><td>'+wr+'</td><td>'+v.wins+'</td><td>'+v.losses+'</td><td>'+v.timeouts+'</td></tr>';
+  }).join('');
+  st.innerHTML = rows || '<tr><td colspan="7" class="subtle">No signals in the selected period.</td></tr>';
+
+  const pt = document.querySelector('#pairTable tbody');
+  const rows2 = Object.entries(d.per_pair||{}).map(function([pair,v]){
+    return '<tr><td>'+pair+'</td><td>'+v.total+'</td><td>'+v.wins+'</td><td>'+v.losses+'</td><td>'+v.timeouts+'</td></tr>';
+  }).join('');
+  pt.innerHTML = rows2 || '<tr><td colspan="5" class="subtle">No trades.</td></tr>';
+}
+document.addEventListener('click', function(e){ const menu=document.getElementById('udcMenu'); const wrap=document.getElementById('udcWrapper'); if(menu && wrap && !wrap.contains(e.target)) menu.style.display='none';});
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('udcDisplay').addEventListener('click', udcOpen);
+  document.getElementById('udcApply').addEventListener('click', udcApply);
+  document.getElementById('udcClear').addEventListener('click', udcClear);
+  ['strategySelect','patternSelect','propSelect'].forEach(function(id){
+    document.getElementById(id).addEventListener('change', setFiltersState);
+  });
+  Array.from(document.querySelectorAll('#udcMenu input[type=checkbox]')).forEach(function(cb){
+    cb.addEventListener('change', setFiltersState);
+  });
+  document.getElementById('runBtn').addEventListener('click', function(){ console.log('[Tester] Run clicked'); runTest(); });
+  document.getElementById('csvBtn').addEventListener('click', function(){ if(__lastResult) exportCSV(__lastResult); else alert('Run a test first.'); });
+  setFiltersState();
+});
+</script>
+
+</body>
+</html>
