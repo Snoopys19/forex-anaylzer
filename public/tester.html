@@ -21,67 +21,7 @@
     .btn.jumbo.alt{background:radial-gradient(160% 160% at 20% 0%,color-mix(in srgb,var(--orange) 45%,transparent),transparent),linear-gradient(180deg,color-mix(in srgb,var(--orange) 35%,transparent),color-mix(in srgb,var(--blue) 20%,transparent))}
     .subtle{color:var(--muted);font-size:.9rem}
 
-    .bar{display:grid;gap:12px;grid-template-columns:auto auto auto auto 1fr auto;align-items:center;margin:10px 18px}
-    .field{display:grid;gap:6px}
-    input[type="number"],input[type="text"],select{padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text)}
-    /* Match UDC select and menu fonts to other dropdowns */
-    /*
-      The UDC dropdown should mirror the appearance of native <select> controls
-      used for the Strategy, Pattern and Proprietary Strategy fields. Instead
-      of inheriting automatically, we explicitly set the same font family,
-      size, weight and padding as the native selects. This ensures the
-      "Select" label and subsequent selections appear identical in style
-      and height. Similarly, the checklist entries inside the UDC menu use
-      the same font sizing as options in the Strategy dropdown. The width
-      remains unchanged to preserve existing layout.
-    */
-    #udcDisplay{
-      font-family:var(--sans);
-      font-size:0.9rem;
-      line-height:1.2;
-      padding:12px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:var(--card);
-      color:var(--text);
-      height:auto;
-    }
-    #udcDisplay span{
-      font-family:var(--sans);
-      font-size:0.9rem;
-      font-weight:400;
-    }
-    #udcMenu,
-    #udcMenu *{
-      font-family:var(--sans);
-      font-size:0.9rem;
-      font-weight:400;
-    }
-    #udcMenu label{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding:6px 10px;
-      white-space:nowrap;
-    }
-    #udcMenu{
-      position:absolute;
-      top:100%;
-      left:0;
-      z-index:1000;
-      margin-top:4px;
-      background:var(--card);
-      color:var(--text);
-      border:1px solid var(--border);
-      border-radius:12px;
-      max-height:260px;
-      overflow:auto;
-      white-space:nowrap;
-      width:max-content;
-      min-width:100%;
-      padding:8px;
-      display:none;
-    }
+ 
     .toggle{display:flex;gap:10px}.opt{padding:10px 14px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:inherit;font-weight:800;cursor:pointer}
     .opt.active{outline:2px solid color-mix(in srgb,var(--orange) 45%,transparent)}
 
