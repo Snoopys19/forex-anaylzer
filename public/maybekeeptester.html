@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AstraFX · Strategy Tester</title>
+  <style>
+    :root{
+      --fg:#f4f6fb; --muted:#ccd2e2; --accent:#2f63ff;
+      --panel:rgba(14,18,34,.65); --border:rgba(255,255,255,.12);
+      --shadow:0 20px 60px rgba(0,0,0,.38);
+    }
+    html,body{height:100%; margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial; color:var(--fg); background:#0b0f1c;}
+    *{box-sizing:border-box}
+    a{color:inherit; text-decoration:none}
+
+    /* hero */
+    .hero{
+      position:relative; display:flex; align-items:flex-start; justify-content:center;
+      min-height:38vh; padding:40px 24px; overflow:hidden;
+      background:radial-gradient(1200px 400px at 75% -20%, rgba(47,99,255,.25), transparent),
+                 radial-gradient(800px 300px at 20% 0%, rgba(255,80,80,.22), transparent),
+                 url('https://images.unsplash.com/photo-1641934747174-4b45e8038e2e?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
+      border-bottom:1px solid var(--border);
+      box-shadow:inset 0 -120px 120px rgba(0,0,0,.55);
+    }
+    .wrap{position:relative; z-index:2; width:min(1400px, 94vw); margin:0 auto;}
+    .brand-bar{display:flex; align-items:center; justify-content:space-between; gap:16px}
+    .brand-left{display:flex; align-items:center; gap:14px}
+    .logo{height:40px; width:auto}
+    .title{font-size:42px; font-weight:800; letter-spacing:.2px; text-shadow:0 10px 40px rgba(0,0,0,.45)}
+    .subtitle{font-size:18px; font-weight:700; color:#7db0ff}
+
+    .nav{display:flex; gap:10px; align-items:center}
+    .btn{appearance:none; border:1px solid var(--border); background:rgba(255,255,255,.08); color:var(--fg);
+         padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer; transition:all .2s ease; box-shadow:0 8px 26px rgba(0,0,0,.25)}
+    .btn:hover{transform:translateY(-1px); background:rgba(255,255,255,.12)}
+    .btn.primary{background:var(--accent); border-color:transparent}
+    .btn.badge{padding:10px 16px}
+
+    /* panel area */
+    .panel{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:var(--shadow)}
+    .grid{display:grid; grid-template-columns:repeat(6, 1fr); gap:12px}
+    .grid select, .grid input[type='range']{width:100%; background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--fg); border-radius:10px; padding:10px}
+    .grid .rangeWrap{display:flex; align-items:center; gap:10px}
+    .grid .rangeWrap output{min-width:36px; display:inline-block; text-align:center; background:rgba(255,255,255,.06); border:1px solid var(--border); border-radius:10px; padding:8px 10px}
+    .muted{color:var(--muted)}
+    .section-title{margin:26px 0 10px; font-weight:800; letter-spacing:.4px}
+
+    /* multi-select look like others */
+    .multi{height:120px}
+    .muted-note{font-size:13px; color:var(--muted)}
+
+    /* right action column */
+    .actions{position:absolute; right:24px; top:calc(38vh + 24px); display:flex; flex-direction:column; gap:12px}
+    @media (max-width: 1100px){ .actions{position:static; margin:12px 0} }
+
+    /* summary / status */
+    .status{margin-top:16px; display:flex; align-items:center; gap:12px}
+    .bar{flex:1; height:10px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; border:1px solid var(--border)}
+    .bar>span{display:block; height:100%; width:0%; background:linear-gradient(90deg, #2f63ff, #7db0ff); transition:width .25s ease}
+
+    /* results text */
+    .results{white-space:pre-wrap; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:12px; padding:14px}
+
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <nav class="topnav">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <rect width="64" height="64" rx="10" fill="#0a0c12"/>
+          <rect x="10" y="22" width="8" height="28" rx="2" fill="#1e90ff"/>
+          <rect x="22" y="16" width="8" height="34" rx="2" fill="#0ea5e9"/>
+          <rect x="34" y="24" width="8" height="26" rx="2" fill="#f97316"/>
+          <rect x="46" y="18" width="8" height="32" rx="2" fill="#1e90ff"/>
+        </svg>
+        <span class="brand-name">Astra<span class="accent">FX</span></span>
+      </div>
+      <div class="nav-actions">
+        <button class="btn" id="openSettings">Contract Settings</button>
+        <button class="btn" id="openJournal">Trade Journal</button>
+        <a class="btn" href="/tester.html">Strategy Tester</a>
+      </div>
+    </nav>
+    <div class="hero-inner">
+      <h1>Daily <span class="accent">High-Probability</span> FX Setups</h1>
+      <p>Live chart scans on demand, Clean Entry, SL/TP, and pip value based on your desired risk.</p>
+      <div class="cta-row">
+        <button class="btn jumbo" id="analyzeBtn">⚡ Analyze Now</button>
+        <button class="btn jumbo alt" id="saveAllBtn">💾 Save All Charts</button>
+        <span class="subtle" id="status" aria-live="polite"></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" style="margin-top:-60px; padding-bottom:60px">
+    <!-- Controls grid -->
+    <div class="panel">
+      <div class="grid">
+        <div>
+          <div class="muted">Pairs</div>
+          <select id="pair">
+            <option>EURUSD</option><option>GBPUSD</option><option>USDJPY</option><option>AUDUSD</option>
+            <option>USDCAD</option><option>USDCHF</option><option>NZDUSD</option>
+            <option>XAUUSD</option><option>EURJPY</option><option>GBPJPY</option><option>AUDJPY</option><option>CADJPY</option>
+            <option>EURGBP</option><option>EURAUD</option>
+          </select>
+        </div>
+        <div>
+          <div class="muted">Timeframe</div>
+          <select id="tf">
+            <option>M5</option><option selected>M15</option><option>M30</option><option>H1</option><option>H4</option><option>D1</option>
+          </select>
+        </div>
+        <div>
+          <div class="muted">Lookback</div>
+          <select id="look">
+            <option>3 days</option><option>7 days</option><option>14 days</option><option selected>30 days</option>
+          </select>
+        </div>
+        <div>
+          <div class="muted">Min Score</div>
+          <div class="rangeWrap">
+            <input id="score" type="range" min="0" max="100" value="70" oninput="document.getElementById('sout').value=this.value">
+            <output id="sout">70</output>
+          </div>
+        </div>
+        <div>
+          <div class="muted">Exit Rule</div>
+          <select id="exit"><option>TP1</option><option selected>TP2</option><option>TP3</option></select>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:12px">
+        <div>
+          <div class="muted">Strategy</div>
+          <select id="strategy">
+            <option value="">— Select —</option>
+            <option value="ichimoku">Ichimoku</option>
+            <option value="ema_pullback">EMA(9/21) Pullback</option>
+            <option value="bbsqueeze">Bollinger Squeeze Breakout</option>
+            <option value="donchian">Donchian 20 Break</option>
+            <option value="orb_london">Opening-Range Breakout (London)</option>
+            <option value="rsi2">RSI-2 Mean Reversion</option>
+          </select>
+        </div>
+        <div>
+          <div class="muted">Pattern</div>
+          <select id="pattern">
+            <option value="">— Select —</option>
+            <option value="pinbar">Pin Bar</option>
+            <option value="engulfing">Engulfing</option>
+            <option value="insidebar">Inside Bar</option>
+            <option value="nr7">NR7</option>
+          </select>
+        </div>
+        <div>
+          <div class="muted">AstraFX Proprietary Strategies</div>
+          <select id="prop">
+            <option value="">— Select —</option>
+            <option value="astra1">AstraFX #1</option>
+          </select>
+        </div>
+        <div style="grid-column: span 3">
+          <div class="muted">User Defined Confluence</div>
+          <select id="udc" class="multi" multiple>
+          </select>
+          <div class="muted-note">Tip: Hold Ctrl/Cmd to select multiple confluences. Selecting here will disable the other pickers.</div>
+        </div>
+      </div>
+
+      <div class="status"><strong>Summary:</strong> <span id="sum" class="muted">Idle</span>
+        <div class="bar"><span id="bar"></span></div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:flex-start; gap:16px; margin-top:18px">
+      <div style="flex:1">
+        <div class="section-title">RESULTS</div>
+        <div id="resultsBox" class="results">—</div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="runBtn">Run Test</button>
+        <button class="btn" id="csvBtn" disabled>Download CSV</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Populate UDC items from known server list
+    const UDC_ITEMS = [
+      "Trend and structure","D1/H4 bias","20/50 EMA slope/stack","Location","HTF S/R",
+      "Supply - Demand zones","FIB overlap","Round levels","Prior day high or low","Classic pivots",
+      "Liquidity & Imbalance","Liquidity sweep","Fair Value Gap","Momentum Confirmation",
+      "Pinbar","Engulfing","Hammer / Shooting star","Morning star / Evening star","Hanging man"
+    ];
+
+    const udcEl = document.getElementById('udc');
+    for(const it of UDC_ITEMS){ const o=document.createElement('option'); o.textContent=it; o.value=it; udcEl.appendChild(o); }
+
+    // Mutually exclusive second row
+    const ids = ['strategy','pattern','prop','udc'];
+    function enforceExclusivity(source){
+      const hasStrategy = document.getElementById('strategy').value !== "";
+      const hasPattern  = document.getElementById('pattern').value  !== "";
+      const hasProp     = document.getElementById('prop').value     !== "";
+      const hasUdc      = document.getElementById('udc').selectedOptions.length > 0;
+      const on = {strategy:hasStrategy, pattern:hasPattern, prop:hasProp, udc:hasUdc};
+      for(const id of ids){
+        const el = document.getElementById(id);
+        const active = on[id];
+        if(active){
+          for(const other of ids){ if(other!==id){ const o=document.getElementById(other); o.disabled=true; o.classList.add('muted'); } }
+        }else{
+          if(!Object.values(on).some(v=>v)){ // none selected
+            el.disabled=false; el.classList.remove('muted');
+          }
+        }
+      }
+    }
+    for(const id of ids){
+      const el=document.getElementById(id);
+      el.addEventListener('change', ()=>enforceExclusivity(id));
+    }
+
+    // Build query & run
+    const runBtn=document.getElementById('runBtn');
+    const csvBtn=document.getElementById('csvBtn');
+    const bar=document.getElementById('bar');
+    const sum=document.getElementById('sum');
+    const res=document.getElementById('resultsBox');
+    let lastTrades=[];
+
+    function lookVal(){ return parseInt(document.getElementById('look').value); }
+    // normalize lookback value (label -> int)
+    (function normalizeLookback(){
+      const el=document.getElementById('look');
+      const v=el.value; const n=parseInt(v);
+      el.addEventListener('change', ()=>{});
+      el.value="30 days"; // visual default
+      Object.defineProperty(window,'lookBackDays',{get(){ return parseInt(document.getElementById('look').value); }});
+    })();
+
+    document.getElementById('look').addEventListener('change', (e)=>{
+      // nothing needed; just a select
+    });
+
+    function getLookback(){
+      const txt = document.getElementById('look').value;
+      return parseInt(txt);
+    }
+
+    runBtn.addEventListener('click', async ()=>{
+      // progress start
+      bar.style.width='20%'; sum.textContent='Running…';
+      const pair=document.getElementById('pair').value;
+      const tf=document.getElementById('tf').value;
+      const lb=getLookback();
+      const score=document.getElementById('score').value;
+      const exit=document.getElementById('exit').value;
+      // group
+      let group=''; let signal=''; let udc=[];
+      if(document.getElementById('strategy').value){ group='strategy'; signal=document.getElementById('strategy').value; }
+      else if(document.getElementById('pattern').value){ group='pattern'; signal=document.getElementById('pattern').value; }
+      else if(document.getElementById('prop').value){ group='prop'; signal=document.getElementById('prop').value; }
+      else { group='udc'; udc=[...document.getElementById('udc').selectedOptions].map(o=>o.value); }
+      bar.style.width='35%';
+      const params=new URLSearchParams({pair, tf, lookback_days:String(lb), min_score:String(score), exit_rule:exit, group, signal:signal||'', udc:udc.join(',')});
+      const r=await fetch('/api/tester?'+params.toString());
+      bar.style.width='60%';
+      let data;
+      try{ data=await r.json(); }catch{ res.textContent='Error'; bar.style.width='0%'; sum.textContent='Idle'; return; }
+      bar.style.width='90%';
+      lastTrades = data.trades || [];
+      const s = data.summary, R = data.results;
+      let signalText = s.group === 'User Defined Confluence' ? s.signal : ({
+        ichimoku:'Ichimoku', ema_pullback:'EMA(9/21) Pullback', bbsqueeze:'Bollinger Squeeze Breakout', donchian:'Donchian 20 Break', orb_london:'Opening-Range Breakout (London)', rsi2:'RSI-2 Mean Reversion', astra1:'AstraFX #1'
+      }[s.signal] || s.signal);
+      const resultsText =
+`RESULTS
+
+Group: ${s.group === 'AstraFX Proprietary' ? 'AstraFX Proprietary Strategies' : s.group.toUpperCase()}
+Signal: ${signalText}
+Timeframe: ${s.timeframe}
+Exit Rule: ${s.exit_rule}
+Min Score: ${s.min_score}
+Look back: ${s.lookback_days} days
+
+Pair: ${R.pair}
+Trades: ${R.trades}
+Wins: ${R.wins}
+Losses: ${R.losses}
+Win%: ${R.win_pct}%`;
+      res.textContent = resultsText;
+      csvBtn.disabled = lastTrades.length===0;
+      bar.style.width='100%'; setTimeout(()=>{bar.style.width='0%';}, 800);
+      sum.textContent='Done';
+    });
+
+    csvBtn.addEventListener('click', ()=>{
+      const rows=[['time','direction','entry','stop','tp','outcome','bars_held']];
+      for(const t of lastTrades){ rows.push([t.time,t.direction,t.entry,t.stop,t.tp,t.outcome,t.bars_held]); }
+      const csv = rows.map(r=>r.join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='strategy_tester_results.csv'; a.click(); URL.revokeObjectURL(a.href);
+    });
+  </script>
+</body>
+</html>
