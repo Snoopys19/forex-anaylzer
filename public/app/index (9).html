@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>AstraFX — Frontend v1.3</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    :root{--bg:#0a0c12;--bg-elev:#0d1119;--surface:#0e1420;--card:#101828;--text:#e7eef7;--sub:#b5c3d6;--muted:#7f8fa3;--border:#1e2a3d;--blue:#1e90ff;--orange:#f97316;--green:#10b981;--red:#ef4444;--radius:18px;--shadow-1:0 10px 30px rgba(0,0,0,.35);--shadow-2:0 20px 60px rgba(0,0,0,.5);--mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--sans:'Inter',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    *{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:var(--sans);color:var(--text);background:radial-gradient(1000px 600px at 70% -20%,color-mix(in srgb,var(--orange) 12%,transparent),transparent),radial-gradient(900px 400px at -10% 20%,color-mix(in srgb,var(--blue) 20%,transparent),transparent),linear-gradient(180deg,var(--bg),#07090e)}
+    .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.75)),url('https://images.pexels.com/photos/7054384/pexels-photo-7054384.jpeg?auto=compress&cs=tinysrgb&w=1600') center/cover no-repeat}
+    .hero::after{content:'';position:absolute;inset:0;background:radial-gradient(80% 80% at 70% 10%,color-mix(in srgb,var(--blue) 18%,transparent),transparent 70%);mix-blend-mode:screen;opacity:.8;pointer-events:none}
+    .topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px}
+    .brand{display:flex;align-items:center;gap:12px}.logo{width:34px;height:34px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45))}.brand-name{font-weight:800;letter-spacing:.3px;font-size:1.2rem}.accent{color:var(--blue)}
+    .hero-inner{padding:54px 20px 28px;max-width:1200px;margin:0 auto}.hero h1{font-size:clamp(28px,5vw,54px);margin:0 0 10px;line-height:1.05}.hero p{margin:0 0 18px;font-size:clamp(14px,2vw,18px);color:var(--sub)}
+    .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin:22px 0}
+    .btn{border:1px solid var(--border);background:linear-gradient(180deg,color-mix(in srgb,var(--bg-elev) 60%,transparent),transparent);color:var(--text);padding:14px 18px;border-radius:14px;font-weight:800;letter-spacing:.2px;cursor:pointer;transition:transform .08s ease,box-shadow .2s ease,background .2s ease}
+    .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-1)}.btn.jumbo{font-size:1.05rem;padding:16px 22px;background:radial-gradient(120% 120% at 20% 0%,color-mix(in srgb,var(--blue) 50%,transparent),transparent),linear-gradient(180deg,color-mix(in srgb,var(--blue) 30%,transparent),color-mix(in srgb,var(--orange) 20%,transparent));border:none}
+    .btn.jumbo.alt{background:radial-gradient(160% 160% at 20% 0%,color-mix(in srgb,var(--orange) 45%,transparent),transparent),linear-gradient(180deg,color-mix(in srgb,var(--orange) 35%,transparent),color-mix(in srgb,var(--blue) 20%,transparent))}
+    .subtle{color:var(--muted);font-size:.9rem}
+
+    .bar{display:grid;gap:12px;grid-template-columns:auto auto auto auto 1fr auto;align-items:center;margin:10px 18px}
+    .field{display:grid;gap:6px}
+    input[type="number"],input[type="text"],select{padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+    /* Match UDC select and menu fonts to other dropdowns */
+    /*
+      The UDC dropdown should mirror the appearance of native <select> controls
+      used for the Strategy, Pattern and Proprietary Strategy fields. Instead
+      of inheriting automatically, we explicitly set the same font family,
+      size, weight and padding as the native selects. This ensures the
+      "Select" label and subsequent selections appear identical in style
+      and height. Similarly, the checklist entries inside the UDC menu use
+      the same font sizing as options in the Strategy dropdown. The width
+      remains unchanged to preserve existing layout.
+    */
+    #udcDisplay{
+      font-family:var(--sans);
+      font-size:0.9rem;
+      line-height:1.2;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:var(--card);
+      color:var(--text);
+      height:auto;
+    }
+    #udcDisplay span{
+      font-family:var(--sans);
+      font-size:0.9rem;
+      font-weight:400;
+    }
+    #udcMenu,
+    #udcMenu *{
+      font-family:var(--sans);
+      font-size:0.9rem;
+      font-weight:400;
+    }
+    #udcMenu label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      white-space:nowrap;
+    }
+    #udcMenu{
+      position:absolute;
+      top:100%;
+      left:0;
+      z-index:1000;
+      margin-top:4px;
+      background:var(--card);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:12px;
+      max-height:260px;
+      overflow:auto;
+      white-space:nowrap;
+      width:max-content;
+      min-width:100%;
+      padding:8px;
+      display:none;
+    }
+    .toggle{display:flex;gap:10px}.opt{padding:10px 14px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:inherit;font-weight:800;cursor:pointer}
+    .opt.active{outline:2px solid color-mix(in srgb,var(--orange) 45%,transparent)}
+
+    .filters{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;margin:0 18px;border-radius:16px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 80%,transparent),transparent);border:1px solid var(--border)}
+    .chip-group{display:flex;gap:10px;flex-wrap:wrap}.chip{border:1px solid var(--border);background:color-mix(in srgb,var(--card) 70%,transparent);color:inherit;padding:10px 14px;border-radius:999px;font-weight:800;cursor:pointer}.chip-active{outline:2px solid color-mix(in srgb,var(--blue) 45%,transparent)}
+
+    .watchlist{display:flex;flex-wrap:wrap;gap:8px}
+    .wl{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text);font-weight:800}
+    .wl.active{outline:2px solid color-mix(in srgb,var(--orange) 45%,transparent)}
+    .chip.disabled,.wl.disabled,.opt.disabled{opacity:.45;pointer-events:none}
+
+    .grid{display:grid;gap:18px;padding:18px;margin:0;grid-template-columns:repeat(12,1fr)}
+    @media (max-width:1200px){.grid{grid-template-columns:repeat(9,1fr)}}
+    @media (max-width:900px){.grid{grid-template-columns:repeat(6,1fr)}}
+    @media (max-width:640px){.grid{grid-template-columns:repeat(1,1fr)}}
+
+    .card{grid-column:span 6;border:1px solid var(--border);border-radius:18px;padding:16px;background:radial-gradient(140% 120% at 0% 0%,color-mix(in srgb,var(--blue) 8%,transparent),transparent),radial-gradient(140% 120% at 100% 100%,color-mix(in srgb,var(--orange) 10%,transparent),transparent),var(--card);box-shadow:var(--shadow-1);display:grid;gap:12px}
+    .card-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .pair{display:flex;gap:10px;align-items:baseline}.pair .sym{font-weight:800;font-size:1.2rem}.pair .tf{font-weight:700;color:var(--muted)}
+    .score{--val:75;--col:var(--blue);width:58px;height:58px;border-radius:50%;background:conic-gradient(var(--col) calc(var(--val)*1%), color-mix(in srgb, var(--col) 15%, #000) 0 100%);display:grid;place-items:center;color:var(--text);font-weight:800;font-size:.95rem;border:2px solid color-mix(in srgb,var(--col) 30%, transparent)}
+    .score.good{--col:var(--blue)}.score.ok{--col:#f59e0b}.score.bad{--col:#ef4444}
+    .tags{display:flex;gap:8px;flex-wrap:wrap}.tag{font-family:var(--mono);font-size:.8rem;padding:6px 10px;border-radius:999px;border:1px dashed var(--border);color:#c6d2e0;background:rgba(255,255,255,.02)}
+    .card-body{display:grid;gap:12px;grid-template-columns: 1fr 1fr;align-items:stretch}
+    .levels{display:grid;gap:10px;grid-template-columns:repeat(1,1fr);font-family:var(--mono)}
+    .levels .box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px}.levels .label{color:var(--muted);font-size:.78rem}.levels .val{font-weight:800}
+    .chart-wrap{border:1px solid var(--border);border-radius:12px;background:var(--surface);position:relative;height:280px}
+    .chart{width:100%;height:100%;display:block;border-radius:12px}
+    .chart-badge{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.5);color:#fff;font-size:.7rem;border-radius:999px;padding:4px 8px;border:1px solid rgba(255,255,255,.1)}
+    .actions{display:flex;gap:12px;flex-wrap:wrap}
+    .btn.primary{border:none;background:radial-gradient(110% 110% at 20% 0%,color-mix(in srgb,var(--blue) 55%,transparent),transparent),linear-gradient(180deg,color-mix(in srgb,var(--blue) 35%,transparent),color-mix(in srgb,var(--orange) 18%,transparent))}
+    .btn.alt{border:none;background:radial-gradient(110% 110% at 20% 0%,color-mix(in srgb,var(--orange) 55%,transparent),transparent),linear-gradient(180deg,color-mix(in srgb,var(--orange) 35%,transparent),color-mix(in srgb,var(--blue) 18%,transparent))}
+
+    .footer{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;margin:0 18px 18px;color:var(--muted)}
+
+    dialog#copyDlg{border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--text);width:min(680px,90vw)}
+    .copy-body{padding:14px}
+    .copy-text{width:100%;min-height:80px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:10px;font-family:var(--mono)}
+  </style>
+<style>
+/* AstraFX header nav tweaks */
+.cta-row a.btn { text-decoration: none !important; }
+.cta-row a.btn:hover { text-decoration: none !important; }
+.cta-row .btn { font-size: 1rem; } /* normalize label size across Analyze/Journal/Tester */
+</style></head>
+<body>
+<header class="hero">
+<nav class="topnav">
+<div class="brand">
+<svg class="logo" viewbox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#0a0c12" height="64" rx="10" width="64"></rect>
+<rect fill="#1e90ff" height="28" rx="2" width="8" x="10" y="22"></rect>
+<rect fill="#0ea5e9" height="34" rx="2" width="8" x="22" y="16"></rect>
+<rect fill="#f97316" height="26" rx="2" width="8" x="34" y="24"></rect>
+<rect fill="#1e90ff" height="32" rx="2" width="8" x="46" y="18"></rect>
+</svg>
+<span class="brand-name">Astra<span class="accent">FX</span></span>
+</div>
+<div class="nav-actions">
+<button class="btn" id="openSettings">Contract Settings</button>
+</div>
+</nav>
+<div class="hero-inner">
+<h1>Daily <span class="accent">High-Probability</span> FX Setups</h1>
+<p>Live chart scans on demand, Clean Entry, SL/TP, and pip value based on your desired risk.</p>
+<div class="cta-row">
+<span aria-live="polite" class="subtle" id="status"></span>
+<a class="btn jumbo alt" href="#" id="openScanner">Analyze Here</a><button class="btn jumbo alt" id="openJournal">Trade Journal</button><a class="btn jumbo alt" href="#" id="openTester">Strategy Tester</a></div>
+</div>
+</header>
+<section class="bar">
+<div class="field">
+<label>Account balance</label>
+<input id="acctBalance" min="0" step="1" type="number" value="10000"/>
+</div>
+<div class="field">
+<label>Risk</label>
+<div class="toggle" id="riskToggle">
+<input id="riskVal" min="0" step="0.1" style="width:120px" type="number" value="1.0"/>
+<button class="opt active" data-mode="%">%</button>
+<button class="opt" data-mode="$">$</button>
+</div>
+</div>
+<div class="field">
+<label>Timeframe</label>
+<div class="chip-group" id="tfChips">
+<button class="chip" data-tf="M5">M5</button>
+<button class="chip" data-tf="M15">M15</button>
+<button class="chip" data-tf="M30">M30</button>
+<button class="chip chip-active" data-tf="H1">H1</button>
+<button class="chip" data-tf="H4">H4</button>
+<button class="chip" data-tf="D1">D1</button>
+</div>
+</div>
+<div class="field">
+<label>Watchlist</label>
+<div class="watchlist" id="watchlist"></div>
+</div>
+<div class="field" style="justify-self:end">
+<label>Filters</label>
+<div style="display:flex;gap:10px;align-items:center">
+<span>Min Score: <strong id="minScoreVal">70</strong></span>
+<input id="minScore" max="100" min="0" step="5" type="range" value="70"/>
+</div>
+</div>
+</section>
+<section class="filters">
+<div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+<label style="display:grid;gap:6px"><span>Strategy</span>
+<select id="strategySelect">
+<option value="all">All strategies</option>
+<option value="none">- None -</option>
+<option value="donchian">Donchian 20 Break (M15, M30, H1, H4, D1)</option>
+<option value="bbsqueeze">Bollinger Squeeze Breakout (M15, M30, H1)</option>
+<option value="ema_pullback">EMA(9/21) Pullback (M15, M30, H1, H4)</option>
+<option value="ichimoku">Ichimoku Trend-Follow (M30, H1, H4, D1)</option>
+<option value="orb_london">Opening-Range Breakout (London) (M5, M15, M30)</option>
+<option value="rsi2">RSI-2 Mean Reversion (M15, H1)</option>
+</select>
+</label>
+<label style="display:grid;gap:6px"><span>Pattern</span>
+<select id="patternSelect">
+<option value="all">All</option>
+<option value="none">- None -</option>
+<option value="pinbar">Pin Bar</option>
+<option value="engulfing">Engulfing</option>
+<option value="insidebar">Inside Bar</option>
+<option value="NR7">NR7</option>
+<option value="donchian20">Donchian</option>
+<option value="rsi">RSI Pullback</option>
+</select>
+</label>
+<!-- AstraFX proprietary strategy selection -->
+<label style="display:grid;gap:6px"><span>AstraFX Proprietary Strategies</span>
+<select id="propSelect">
+<option value="none">Select</option>
+<option value="astra1">AstraFX Strategy #1</option>
+</select>
+</label>
+<!-- User defined confluence dropdown with checkboxes -->
+<label style="display:grid;gap:6px"><span>User Defined Confluence</span>
+<!-- Wrapper behaves like a native select: display element and hidden menu -->
+<div id="udcWrapper" style="position:relative; min-width:260px; width:max-content; white-space:nowrap;">
+<!-- Visible portion styled to match other selects -->
+<div id="udcDisplay" style="padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:100%;">
+<span id="udcLabel">Select</span>
+<!-- caret indicator -->
+<span style="pointer-events:none;">▾</span>
+</div>
+<!-- Dropdown panel containing checkboxes; initially hidden -->
+<div id="udcMenu" style="display:none;position:absolute;z-index:1000;left:0;right:0;top:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;max-height:240px;overflow:auto;font-family:inherit;color:inherit;white-space:nowrap;width:max-content;min-width:100%;padding:4px;">
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Trend and structure"/>Trend and structure</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="D1/H4 bias"/>D1/H4 bias</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="20/50 EMA slope/stack"/>20/50 EMA slope/stack</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Location"/>Location</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="HTF S/R"/>HTF S/R</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Supply - Demand zones"/>Supply - Demand zones</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="FIB overlap"/>FIB overlap</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Round levels"/>Round levels</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Prior day high or low"/>Prior day high or low</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Classic pivots"/>Classic pivots</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Liquidity &amp; Imbalance"/>Liquidity &amp; Imbalance</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Liquidity sweep"/>Liquidity sweep</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Fair Value Gap"/>Fair Value Gap</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Momentum Confirmation"/>Momentum Confirmation</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Pinbar"/>Pinbar</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Engulfing"/>Engulfing</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Hammer / Shooting star"/>Hammer / Shooting star</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Morning star / Evening star"/>Morning star / Evening star</label>
+<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font:inherit;color:inherit;white-space:nowrap"><input style="margin-right:8px" type="checkbox" value="Hanging man"/>Hanging man</label>
+</div>
+</div>
+</label>
+<!-- AI Trading Ideas toggle -->
+<label style="display:grid;gap:6px">
+<span>AI- Trading Ideas</span>
+<select id="aiIdeasSelect">
+<option value="off">Off</option>
+<option value="on">On</option>
+</select>
+</label><div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top:6px;"><button class="btn jumbo alt" id="analyzeBtn">⚡ Analyze Now</button><button class="btn jumbo alt" id="saveAllBtn">💾 Save All Charts</button></div>
+<span class="subtle" id="tfHint"></span>
+</div>
+</section>
+<main class="grid" id="cardsGrid"></main>
+<!-- Trade Journal page (hidden by default) -->
+<section id="journalPage" style="display:none;padding:18px">
+<header class="filters-row" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Pair</span>
+<select id="journalFilterPair">
+<option value="">All</option>
+<!-- Options populated on open -->
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Timeframe</span>
+<select id="journalFilterTF">
+<option value="">All</option>
+<!-- Options populated on open -->
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Direction</span>
+<select id="journalFilterDir">
+<option value="">All</option>
+<option value="long">Long</option>
+<option value="short">Short</option>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Type</span>
+<select id="journalFilterType">
+<option value="">All</option>
+<option value="ai">AI Idea</option>
+<option value="strategy">Strategy</option>
+<option value="pattern">Pattern</option>
+<option value="prop">Proprietary</option>
+<option value="udc">UDC</option>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Min Score</span>
+<input id="journalFilterScore" max="100" min="0" step="1" style="width:80px" type="number"/>
+</label>
+<button class="btn" id="journalExport" style="margin-top:22px">Export CSV</button>
+<button class="btn" id="journalBack" style="margin-top:22px">Back to Scanner</button>
+<button class="btn" id="journalDeleteAll" style="margin-top:22px;margin-left:auto">Delete All</button>
+</div>
+</header>
+<div style="overflow:auto;max-height:calc(100vh - 230px)">
+<table id="journalTable" style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.85rem">
+<thead><tr>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left"><input id="journalSelectAll" type="checkbox"/></th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">Date/Time</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">Pair</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">TF</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">Dir</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">Entry</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">Stop</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">TP1</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">TP2</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">TP3</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">Score</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">Outcome</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">Notes</th>
+<th style="padding:6px;border-bottom:1px solid var(--border);text-align:left">Actions</th>
+</tr></thead>
+<tbody></tbody>
+</table>
+</div>
+</section>
+<footer class="footer">
+<span>© <span id="year"></span> AstraFX</span>
+<div class="links"><a href="#">Privacy</a><a href="#">Terms</a></div>
+</footer>
+<dialog id="settings">
+<div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)">
+<h3>Contract Settings</h3>
+<button class="btn" id="closeSettings">✕</button>
+</div>
+<div class="modal-body" style="padding:16px">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div class="field"><label>FX pip size (non-JPY)</label><input id="set_fx_pip" step="0.0001" type="number" value="0.0001"/></div>
+<div class="field"><label>FX pip size (JPY pairs)</label><input id="set_jpy_pip" step="0.01" type="number" value="0.01"/></div>
+<div class="field"><label>FX $/pip per lot (manual override; blank = auto)</label><input id="set_fx_pip_per_lot" placeholder="e.g., 10" step="0.01" type="number"/></div>
+<div class="field"><label>XAUUSD point size</label><input id="set_xau_point" step="0.1" type="number" value="0.1"/></div>
+<div class="field"><label>XAUUSD $/point per lot</label><input id="set_xau_per_point" step="0.1" type="number" value="10"/></div>
+<div class="field" style="grid-column:1 / -1"><label>API Base (backend URL)</label><input id="set_api_base" placeholder="https://YOUR-BACKEND or leave blank for http://localhost:5057" type="text"/><div class="subtle" style="margin-top:6px">Current: <code id="api_current"></code></div></div>
+<div class="field"><label> </label><button class="btn primary" id="saveSettings">Save Settings</button></div>
+</div>
+</div>
+</dialog>
+<dialog id="copyDlg"><div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border)"><strong>Manual copy</strong><button class="btn" id="copyClose">✕</button></div><div class="copy-body"><p class="subtle">Clipboard is blocked. Select the text and press <b>Ctrl/⌘ + C</b>, then paste into TradingView.</p><textarea class="copy-text" id="copyText" readonly=""></textarea><div style="display:flex;gap:10px;margin-top:10px"><button class="btn" id="copySelect">Select All</button><button class="btn primary" id="copyClose2">Close</button></div></div></dialog>
+<!-- Journal editor modal -->
+<dialog id="journalEditor" style="border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--text);width:min(600px,90vw)">
+<form method="dialog" style="padding:16px;display:grid;gap:10px">
+<h3 style="margin-top:0;">Log Trade</h3>
+<input id="jeditId" type="hidden"/>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Pair</span>
+<input id="jeditPair" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="text"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Timeframe</span>
+<input id="jeditTF" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="text"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Direction</span>
+<input id="jeditDir" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="text"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Entry</span>
+<input id="jeditEntry" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="number"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Stop</span>
+<input id="jeditStop" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="number"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>TP1</span>
+<input id="jeditTP1" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="number"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>TP2</span>
+<input id="jeditTP2" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="number"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>TP3</span>
+<input id="jeditTP3" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="number"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Setup/Type</span>
+<input id="jeditSetup" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="text"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Score</span>
+<input id="jeditScore" readonly="" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)" type="number"/>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Outcome</span>
+<select id="jeditOutcome" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)">
+<option value="pending">Pending</option>
+<option value="win">Win</option>
+<option value="loss">Loss</option>
+<option value="be">BE</option>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>TP Hits</span>
+<div style="display:flex;gap:12px">
+<label><input id="jeditTP1Hit" type="checkbox"/>TP1</label>
+<label><input id="jeditTP2Hit" type="checkbox"/>TP2</label>
+<label><input id="jeditTP3Hit" type="checkbox"/>TP3</label>
+</div>
+</label>
+<label style="display:flex;flex-direction:column;gap:4px">
+<span>Notes</span>
+<textarea id="jeditNotes" rows="3" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)"></textarea>
+</label>
+<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+<button class="btn primary" id="jeditSave" type="button">Save</button>
+<button class="btn" id="jeditCancel" type="button">Cancel</button>
+</div>
+</form>
+</dialog>
+<script>
+    const $=(s,e=document)=>e.querySelector(s); const $$=(s,e=document)=>[...e.querySelectorAll(s)];
+    const API = (localStorage.getItem('astra_api') || window.location.origin).trim();
+    const DEFAULT_PAIRS = ['EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD','USDCHF','NZDUSD','XAUUSD'];
+
+    const STRAT_TF = {
+      donchian: ['M15','M30','H1','H4','D1'],
+      bbsqueeze: ['M15','M30','H1'],
+      ema_pullback: ['M15','M30','H1','H4'],
+      ichimoku: ['M30','H1','H4','D1'],
+      orb_london: ['M5','M15','M30'],
+      rsi2: ['M15','H1']
+    };
+
+    const state = {
+      tf:'H1', minScore:70,
+      pattern:'all', strategy:'all',
+      prop:'none',
+      // User defined confluence selections (array of strings)
+      udc: [],
+      // AI trading ideas toggle ("on" or "off")
+      ai: 'off',
+      balance: 10000, riskMode:'%', riskVal:1.0,
+      pairs: new Set(['EURUSD','GBPUSD','USDJPY','XAUUSD']),
+      settings: loadSettings()
+    };
+
+    function toast(msg){ const st=$('#status'); if(!st) return; st.textContent=msg; clearTimeout(toast._t); toast._t=setTimeout(()=>{ if(st.textContent===msg) st.textContent=''; }, 2500); }
+
+    function loadSettings(){ try{ const s = JSON.parse(localStorage.getItem('astra_settings')||'{}');
+      return { fx_pip:s.fx_pip??0.0001, jpy_pip:s.jpy_pip??0.01, fx_pip_per_lot:s.fx_pip_per_lot??'', xau_point:s.xau_point??0.1, xau_per_point:s.xau_per_point??10 } }catch{ return { fx_pip:0.0001, jpy_pip:0.01, fx_pip_per_lot:'', xau_point:0.1, xau_per_point:10 } }}
+    function saveSettings(){ localStorage.setItem('astra_settings', JSON.stringify(state.settings)); }
+
+    function pipSize(pair){ if(pair==='XAUUSD') return state.settings.xau_point; return pair.endsWith('JPY') ? state.settings.jpy_pip : state.settings.fx_pip; }
+    function perLotPipUSD(pair, price){ if(pair==='XAUUSD') return state.settings.xau_per_point; if(state.settings.fx_pip_per_lot){ return parseFloat(state.settings.fx_pip_per_lot)||10; } if(pair.endsWith('USD')) return 10.0; if(pair.startsWith('USD')) return 10.0/price; if(pair.endsWith('JPY')) return 1000.0/price; return 10.0; }
+    function riskAmount(){ return state.riskMode==='%' ? state.balance*(state.riskVal/100) : state.riskVal; }
+    function number(v, d=4){ if(typeof v!=='number') return v; const s=v.toFixed(d).replace(/0+$/,'').replace(/\.$/,''); return s; }
+
+    function drawChart(canvas, series, overlays){
+      const rect = canvas.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1; const cssW=Math.max(1,Math.floor(rect.width)); const cssH=Math.max(1,Math.floor(rect.height)); const pxW=Math.floor(cssW*dpr); const pxH=Math.floor(cssH*dpr); if(canvas.width!==pxW) canvas.width=pxW; if(canvas.height!==pxH) canvas.height=pxH; const ctx=canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); const W=cssW,H=cssH;
+      let min=Infinity,max=-Infinity; for(const b of series){ if(b.low<min) min=b.low; if(b.high>max) max=b.high; }
+      const lvls=[]; if(overlays&&typeof overlays.entry==='number') lvls.push(overlays.entry); if(overlays&&typeof overlays.stop==='number') lvls.push(overlays.stop); if(overlays&&Array.isArray(overlays.tps)) lvls.push(...overlays.tps); for(const v of lvls){ if(v<min) min=v; if(v>max) max=v; }
+      const pad=(max-min)*0.06; min-=pad; max+=pad; const xstep=Math.max(1,W/Math.max(1,series.length)); const y=v=> H-(v-min)/(max-min)*H;
+      const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#0f1625'); g.addColorStop(1,'#0b0f18'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.beginPath(); for(let i=0;i<6;i++){const yy=i*(H/5); ctx.moveTo(0,yy); ctx.lineTo(W,yy);} for(let i=0;i<10;i++){const xx=i*(W/9); ctx.moveTo(xx,0); ctx.lineTo(xx,H);} ctx.stroke();
+      for(let i=0;i<series.length;i++){ const {open,high,low,close}=series[i]; const x=i*xstep+0.5; const up=close>=open; ctx.strokeStyle=up?'#10b981':'#ef4444'; ctx.beginPath(); ctx.moveTo(x,y(low)); ctx.lineTo(x,y(high)); ctx.stroke(); ctx.fillStyle=up?'rgba(16,185,129,.9)':'rgba(239,68,68,.9)'; const top=y(Math.max(open,close)), bot=y(Math.min(open,close)); const bw=Math.max(2,xstep*.5); ctx.fillRect(x-bw/2, top, bw, Math.max(1, bot-top)); }
+      function labelWidth(txt){ ctx.font='12px JetBrains Mono, monospace'; return ctx.measureText(txt).width+14; }
+      function hline(val,col,label,dashed=false){ const yy=y(val); ctx.save(); if(dashed) ctx.setLineDash([6,4]); ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(W,yy); ctx.stroke(); const boxW=Math.min(W-12,Math.max(120,labelWidth(label))); ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(6,yy-10,boxW,18); ctx.fillStyle='#fff'; ctx.font='12px JetBrains Mono, monospace'; ctx.fillText(label,10,yy+4); ctx.restore(); }
+      function dec(v){ return v>=100?2:5; }
+      if(overlays&&typeof overlays.entry==='number') hline(overlays.entry,'#1e90ff',`ENTRY ${overlays.entry.toFixed(dec(overlays.entry))}`);
+      if(overlays&&typeof overlays.stop==='number')  hline(overlays.stop,'#ef4444',`STOP ${overlays.stop.toFixed(dec(overlays.stop))}`,true);
+      if(overlays&&Array.isArray(overlays.tps)) overlays.tps.forEach((tp,i)=> hline(tp,'#10b981',`TP${i+1} ${tp.toFixed(dec(tp))}`));
+    }
+
+    async function fetchOHLC(pair, tf){
+      try{ const r=await fetch(`${API}/api/ohlc?pair=${pair}&tf=${tf}&limit=220`,{cache:'no-store'}); if(!r.ok) throw new Error('ohlc'); const j=await r.json(); return j.ohlc.map(x=>({open:x.open,high:x.high,low:x.low,close:x.close,time:x.time})); }catch{ return null; }
+    }
+
+    function htmlCard(sig, idx){
+      // Special layout for AI ideas
+      if (sig.type === 'ai_idea'){
+        const id=`chart_${idx}`;
+        const tps = sig.tps || sig.targets || [];
+        // Use confidence/score for the gauge and color
+        const sc = sig.score || sig.confidence || 60;
+        return `
+        <article class="card">
+          <header class="card-header">
+            <div class="pair"><div class="sym">${sig.pair}</div><div class="tf">${sig.tf}</div><div class="tf" style="margin-left:8px; font-weight:600; color:var(--sub)">${sig.dir.toUpperCase()}</div></div>
+            <div class="score ${sc>=80?'good':sc>=70?'ok':'bad'}" style="--val:${sc}">${sc}</div>
+          </header>
+          <div class="tags"><span class="tag">AI Idea</span></div>
+          <div class="card-body" style="grid-template-columns: 1fr 1fr;">
+            <div style="grid-column: span 2;"><b>Bias</b><br>${sig.bias_text||''}</div>
+            <div style="grid-column: span 2; margin-top:8px;"><b>Plan</b><br>${sig.plan_text||''}</div>
+            <div style="grid-column: span 2; margin-top:8px;"><b>Confluence</b><br>${(sig.confluence_list||[]).join(' · ')}</div>
+            <div style="grid-column: span 2; margin-top:8px;"><b>Timing</b><br>${sig.timing_text||''}</div>
+            ${sig.news_text ? `<div style="grid-column: span 2; margin-top:8px;"><b>News</b><br>${sig.news_text}</div>` : ``}
+            <div style="grid-column: span 2; margin-top:8px;"><b>Notes</b><br>${sig.notes_text||''}</div>
+            <div class="chart-wrap" style="grid-column: span 2; margin-top:12px;"><canvas class="chart" id="${id}"></canvas><span class="chart-badge">${sig.pair}</span></div>
+          </div>
+        <div class="actions">
+            <a class="btn primary" href="${sig.tv}" target="_blank" rel="noopener">Open in TradingView ↗</a>
+            <button class="btn primary" onclick="copyTV(${idx})">Copy for TradingView</button>
+            <button class="btn alt" onclick="saveChart('${id}','${sig.pair}_${sig.tf}.png')">Save Chart PNG</button>
+            <button class="btn"
+              data-pair="${sig.pair}"
+              data-tf="${sig.tf}"
+              data-dir="${sig.dir || ((sig.stop != null && sig.entry != null && sig.stop > sig.entry) ? 'short' : 'long')}"
+              data-entry="${sig.entry}"
+              data-stop="${sig.stop}"
+              data-tps="${(sig.tps||[]).join('|')}"
+              data-setup="${sig.setup || ''}"
+              data-score="${sig.score || ''}"
+              onclick="addToJournalFromCard(this)">Add to Journal</button>
+          </div>
+        </article>`;
+      }
+      // Standard card layout for normal signals
+      const id=`chart_${idx}`; const ps=pipSize(sig.pair); const stopPips=Math.abs(sig.entry-sig.stop)/ps; const risk=riskAmount(); const needPerPip=stopPips? (risk/stopPips):0; const lotPip=perLotPipUSD(sig.pair, sig.entry); const lots=lotPip>0 ? (needPerPip/lotPip) : 0;
+      return `
+        <article class="card">
+          <header class="card-header">
+            <div class="pair"><div class="sym">${sig.pair}</div><div class="tf">${sig.tf}</div></div>
+            <div class="score ${sig.score>=80?'good':sig.score>=70?'ok':'bad'}" style="--val:${sig.score}">${sig.score}</div>
+          </header>
+          <div class="tags">${sig.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+          <div class="card-body">
+            <div class="levels">
+              <div class="box"><div class="label">SETUP</div><div class="val">${sig.setup}</div></div>
+              <div class="box"><div class="label">ENTRY</div><div class="val">${number(sig.entry)}</div></div>
+              <div class="box"><div class="label">STOP</div><div class="val">${number(sig.stop)}</div></div>
+              <div class="box"><div class="label">TPs</div><div class="val">${sig.tps.map(v=>number(v)).join(' / ')}</div></div>
+              <div class="box"><div class="label">STOP DISTANCE</div><div class="val">${number(stopPips,2)} pips</div></div>
+              <div class="box"><div class="label">SET THIS: $ PER PIP</div><div class="val">$${number(needPerPip,2)}</div></div>
+              <div class="box"><div class="label" title="FYI if platform requires lots">EST. POSITION SIZE</div><div class="val">${number(lots,3)} lots</div></div>
+            </div>
+            <div class="chart-wrap"><canvas class="chart" id="${id}"></canvas><span class="chart-badge">${sig.pair}</span></div>
+          </div>
+          <div class="actions">
+            <a class="btn primary" href="${sig.tv}" target="_blank" rel="noopener">Open in TradingView ↗</a>
+            <button class="btn primary" onclick="copyTV(${idx})">Copy for TradingView</button>
+            <button class="btn alt" onclick="saveChart('${id}','${sig.pair}_${sig.tf}.png')">Save Chart PNG</button>
+            <button class="btn"
+              data-pair="${sig.pair}"
+              data-tf="${sig.tf}"
+              data-dir="${sig.dir || ((sig.stop != null && sig.entry != null && sig.stop > sig.entry) ? 'short' : 'long')}"
+              data-entry="${sig.entry}"
+              data-stop="${sig.stop}"
+              data-tps="${(sig.tps||[]).join('|')}"
+              data-setup="${sig.setup || ''}"
+              data-score="${sig.score || ''}"
+              onclick="addToJournalFromCard(this)">Add to Journal</button>
+          </div>
+        </article>`;
+    }
+
+    function attachCharts(signals){
+      signals.forEach(async (sig,i)=>{ const id=`chart_${i}`; const canvas=document.getElementById(id); if(!canvas) return; let series=await fetchOHLC(sig.pair, sig.tf); if(!series){ series=Array.from({length:100},(_,k)=>{ const base=sig.entry*(1+(k-50)*1e-4); return {open:base,high:base*(1+Math.random()*0.001),low:base*(1-Math.random()*0.001),close:base*(1+(Math.random()-0.5)*0.001)};}); } drawChart(canvas, series, {entry:sig.entry, stop:sig.stop, tps:sig.tps}); });
+    }
+
+    let lastSignals=[];
+    function render(signals){
+      const grid=$('#cardsGrid'); if(!signals||!signals.length){ grid.innerHTML='<div class="subtle">No signals (try lower min score / different TF).</div>'; lastSignals=[]; return; }
+      // Filter by selected pairs, pattern (unless 'all'), and minimum score; search filtering removed
+      const filtered = signals
+        .filter(s => state.pairs.has(s.pair))
+        // If AI idea, bypass pattern filter; otherwise apply pattern/none/all logic
+        .filter(s => s.type === 'ai_idea' || state.pattern === 'all' || state.pattern === 'none' || (s.tags || []).includes(state.pattern))
+        .filter(s => s.score >= state.minScore);
+      lastSignals=filtered;
+      grid.innerHTML=filtered.map((s,i)=> htmlCard(s,i)).join('');
+      attachCharts(filtered);
+    }
+
+    async function scanNow(){
+      const status=$('#status'); status.textContent='Fetching…';
+      try{
+        const chosen = Array.from(state.pairs).join(',');
+        let url = `${API}/api/scan?tf=${state.tf}&min_score=${state.minScore}&pattern=${encodeURIComponent(state.pattern)}&strategy=${encodeURIComponent(state.strategy)}&pairs=${encodeURIComponent(chosen)}&prop=${encodeURIComponent(state.prop)}`;
+        // Append user defined confluence selections if any
+        if (state.udc && state.udc.length){
+          url += `&udc=${encodeURIComponent(state.udc.join(','))}`;
+        }
+        // Append AI flag if turned on
+        if (state.ai === 'on'){
+          url += `&ai=1`;
+        }
+        const r = await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(await r.text()); const data=await r.json(); status.textContent=''; render(data.signals||[]);
+      }catch(e){ status.textContent='Could not fetch signals.'; console.error(e); }
+    }
+
+    function saveChart(id, filename){ const c=document.getElementById(id); if(!c) return; const a=document.createElement('a'); a.download=filename; a.href=c.toDataURL('image/png'); a.click(); }
+    function saveAllCharts(){ const canvases=$$('.chart'); if(!canvases.length) return; canvases.forEach((c,i)=>{ const a=document.createElement('a'); a.download=`chart_${i+1}.png`; a.href=c.toDataURL('image/png'); a.click(); }); }
+
+    async function safeCopy(text){ try{ if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); toast('Copied to clipboard'); return true; } }catch(e){} try{ const ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.top='-1000px'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); const ok=document.execCommand && document.execCommand('copy'); document.body.removeChild(ta); if(ok){ toast('Copied (legacy)'); return true; } }catch(e){} showCopyModal(text); toast('Clipboard blocked — manual copy'); return false; }
+    function showCopyModal(text){ const dlg=$('#copyDlg'); const ta=$('#copyText'); ta.value=text; dlg.showModal(); setTimeout(()=>{ ta.focus(); ta.select(); },0); }
+    function buildTVLine(s){ const tps=s.tps||[]; return [s.pair, s.tf, s.dir, s.entry, s.stop, tps[0]??'', tps[1]??'', tps[2]??''].join(','); }
+    async function copyTV(idx){ try{ const s=lastSignals[idx]; if(!s) return; const line=buildTVLine(s); await safeCopy(line); }catch(e){ console.error('Clipboard',e); toast('Copy failed — use manual copy'); } }
+
+    function applyRiskToggleActive(){ $$('#riskToggle .opt').forEach(btn=> btn.classList.toggle('active', state.riskMode===btn.dataset.mode)); }
+    function applyTfCompatibility(){
+      const hint=$('#tfHint');
+      const strat=state.strategy;
+      const allowed = (strat==='all' || strat==='none') ? null : new Set(STRAT_TF[strat]||[]);
+      $$('#tfChips .chip').forEach(ch=>{
+        const t=ch.dataset.tf; const ok = !allowed || allowed.has(t);
+        ch.classList.toggle('disabled', !ok);
+        if(!ok && ch.classList.contains('chip-active')){
+          ch.classList.remove('chip-active');
+        }
+      });
+      if(allowed && !allowed.has(state.tf)){
+        state.tf = STRAT_TF[strat][0];
+        $$('#tfChips .chip').forEach(x=> x.classList.toggle('chip-active', x.dataset.tf===state.tf));
+        hint.textContent = `Strategy evaluated on ${STRAT_TF[strat].join(', ')} — switched to ${state.tf}.`;
+      } else {
+        hint.textContent = (strat==='all' || strat==='none') ? '' : `Strategy evaluated on: ${STRAT_TF[strat].join(', ')}`;
+      }
+    }
+
+    function initUI(){
+      $('#acctBalance').value=state.balance; $('#riskVal').value=state.riskVal; $('#minScore').value=state.minScore; $('#minScoreVal').textContent=state.minScore;
+      const wl=$('#watchlist'); wl.innerHTML=''; ['EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD','USDCHF','NZDUSD','XAUUSD'].forEach(p=>{ const b=document.createElement('button'); b.className='wl'+(state.pairs.has(p)?' active':''); b.textContent=p; b.dataset.p=p; b.onclick=()=>{ b.classList.toggle('active'); if(state.pairs.has(p)) state.pairs.delete(p); else state.pairs.add(p); }; wl.appendChild(b); });
+      $$('#tfChips .chip').forEach(ch=> ch.onclick=(e)=>{ const t=e.currentTarget.dataset.tf; if(e.currentTarget.classList.contains('disabled')) return; $$('#tfChips .chip').forEach(x=>x.classList.remove('chip-active')); e.currentTarget.classList.add('chip-active'); state.tf=t; });
+      $$('#riskToggle .opt').forEach(o=> o.onclick=(e)=>{ state.riskMode=e.currentTarget.dataset.mode; applyRiskToggleActive(); render(lastSignals); });
+      $('#acctBalance').oninput=(e)=>{ state.balance=+e.target.value||0; render(lastSignals); };
+      $('#riskVal').oninput=(e)=>{ state.riskVal=+e.target.value||0; render(lastSignals); };
+      $('#minScore').oninput=(e)=>{ state.minScore=+e.target.value; $('#minScoreVal').textContent=state.minScore; };
+      $('#patternSelect').onchange=(e)=>{ state.pattern=e.target.value; };
+      // Update proprietary strategy selection
+      const propSel = $('#propSelect');
+      if (propSel) propSel.onchange = (e) => { state.prop = e.target.value; };
+      // User defined confluence dropdown with checkboxes
+      const udcDisplay = $('#udcDisplay');
+      const udcMenu    = $('#udcMenu');
+      const udcLabelEl = $('#udcLabel');
+      // ensure state.udc exists as an array
+      if (!Array.isArray(state.udc)) state.udc = [];
+      if (udcDisplay && udcMenu){
+        // toggle the menu when clicking the display
+        udcDisplay.onclick = (ev) => {
+          ev.stopPropagation();
+          const open = udcMenu.style.display === 'block';
+          udcMenu.style.display = open ? 'none' : 'block';
+        };
+        // handle checkbox changes
+        udcMenu.addEventListener('change', (ev) => {
+          if (ev.target && ev.target.tagName === 'INPUT'){
+            const checked = Array.from(udcMenu.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+            state.udc = checked;
+            if (udcLabelEl){
+              if (!checked.length){
+                udcLabelEl.textContent = 'Select';
+              } else if (checked.length <= 2){
+                udcLabelEl.textContent = checked.join(', ');
+              } else {
+                udcLabelEl.textContent = checked.length + ' selected';
+              }
+            }
+            // When user defined confluences are selected, re-evaluate TF compatibility
+            applyTfCompatibility();
+          }
+        });
+        // close menu on outside click
+        document.addEventListener('click', (ev) => {
+          if (!udcMenu.contains(ev.target) && !udcDisplay.contains(ev.target)){
+            if (udcMenu.style.display === 'block'){
+              udcMenu.style.display = 'none';
+            }
+          }
+        });
+      }
+      $('#strategySelect').onchange=(e)=>{ state.strategy=e.target.value; applyTfCompatibility(); };
+      applyRiskToggleActive(); applyTfCompatibility();
+
+      // Initialize AI ideas toggle
+      const aiSel = $('#aiIdeasSelect');
+      if (aiSel){
+        aiSel.value = state.ai || 'off';
+        aiSel.onchange = (e) => {
+          state.ai = e.target.value;
+        };
+      }
+      $('#year').textContent = new Date().getFullYear();
+      $('#openSettings').onclick=()=>{ $('#set_fx_pip').value=state.settings.fx_pip; $('#set_jpy_pip').value=state.settings.jpy_pip; $('#set_fx_pip_per_lot').value=state.settings.fx_pip_per_lot; $('#set_xau_point').value=state.settings.xau_point; $('#set_xau_per_point').value=state.settings.xau_per_point; const api=localStorage.getItem('astra_api')||'http://localhost:5057'; $('#set_api_base').value=localStorage.getItem('astra_api')||''; $('#api_current').textContent=api; $('#settings').showModal(); };
+      $('#saveSettings').onclick=()=>{ state.settings.fx_pip=parseFloat($('#set_fx_pip').value)||0.0001; state.settings.jpy_pip=parseFloat($('#set_jpy_pip').value)||0.01; state.settings.fx_pip_per_lot=$('#set_fx_pip_per_lot').value.trim(); state.settings.xau_point=parseFloat($('#set_xau_point').value)||0.1; state.settings.xau_per_point=parseFloat($('#set_xau_per_point').value)||10; saveSettings(); const apiBase=($('#set_api_base').value||'').trim(); if(apiBase){ localStorage.setItem('astra_api', apiBase); toast('API base saved. Reloading…'); } else { localStorage.removeItem('astra_api'); toast('API base cleared (using http://localhost:5057). Reloading…'); } $('#settings').close(); setTimeout(()=> location.reload(), 400); };
+      $('#analyzeBtn').onclick = scanNow; $('#saveAllBtn').onclick = ()=>{ const canvases=$$('.chart'); if(!canvases.length) return; canvases.forEach((c,i)=>{ const a=document.createElement('a'); a.download=`chart_${i+1}.png`; a.href=c.toDataURL('image/png'); a.click(); }); };
+      $('#copyClose').onclick = ()=> $('#copyDlg').close(); $('#copyClose2').onclick = ()=> $('#copyDlg').close(); $('#copySelect').onclick = ()=> { const ta=$('#copyText'); ta.focus(); ta.select(); toast('Selected — press Ctrl/⌘+C'); };
+    }
+
+    initUI();
+    scanNow();
+
+    // === Trade Journal functionality ===
+    (function(){
+      const JOURNAL_KEY = 'astra_journal';
+      // Show/hide scanner sections
+      function toggleScanner(show){
+        ['.bar','.filters','#cardsGrid','footer'].forEach(sel=>{
+          $$(sel).forEach(el=>{ el.style.display = show ? '' : 'none'; });
+        });
+      }
+      function loadJournal(){
+        try { return JSON.parse(localStorage.getItem(JOURNAL_KEY) || '[]'); } catch { return []; }
+      }
+      function saveJournal(entries){
+        localStorage.setItem(JOURNAL_KEY, JSON.stringify(entries));
+      }
+      function renderJournal(){
+        const entries = loadJournal();
+        const pairFilter = $('#journalFilterPair')?.value || '';
+        const tfFilter   = $('#journalFilterTF')?.value || '';
+        const dirFilter  = $('#journalFilterDir')?.value || '';
+        const typeFilter = $('#journalFilterType')?.value || '';
+        const minScore   = parseFloat($('#journalFilterScore')?.value || '') || 0;
+        // Populate pair and TF dropdowns once
+        const pairSel = $('#journalFilterPair');
+        const tfSel   = $('#journalFilterTF');
+        if(pairSel && pairSel.options.length <= 1){
+          const pairs = [...new Set(entries.map(e=> e.pair))]; pairs.sort();
+          pairs.forEach(p=>{ const o=document.createElement('option'); o.value=o.textContent=p; pairSel.appendChild(o); });
+        }
+        if(tfSel && tfSel.options.length <= 1){
+          const tfs = [...new Set(entries.map(e=> e.tf))]; tfs.sort((a,b)=> a.localeCompare(b));
+          tfs.forEach(t=>{ const o=document.createElement('option'); o.value=o.textContent=t; tfSel.appendChild(o); });
+        }
+        const rows = entries.filter(e=>{
+          return (!pairFilter || e.pair===pairFilter)
+            && (!tfFilter || e.tf===tfFilter)
+            && (!dirFilter || e.dir===dirFilter)
+            && (!typeFilter || e.type===typeFilter)
+            && (!isNaN(minScore) ? ((e.score||e.confidence||0) >= minScore) : true);
+        });
+        const tbody = $('#journalTable tbody');
+        if(tbody){
+          tbody.innerHTML = rows.map(e => {
+            const hits = (e.tpHits || []).map(hit => hit ? '✓' : '✗').concat(['','','']).slice(0, 3);
+            const tps  = e.tps || [];
+            return `<tr>
+              <td style="padding:6px;border-bottom:1px solid var(--border);text-align:center"><input type="checkbox" class="journal-select" data-id="${e.id}" /></td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${new Date(e.ts).toLocaleString()}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${e.pair}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${e.tf}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${e.dir}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${e.entry != null ? parseFloat(e.entry).toFixed(5) : ''}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${e.stop  != null ? parseFloat(e.stop).toFixed(5) : ''}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${tps[0] != null ? parseFloat(tps[0]).toFixed(5) + ' ' + hits[0] : ''}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${tps[1] != null ? parseFloat(tps[1]).toFixed(5) + ' ' + hits[1] : ''}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${tps[2] != null ? parseFloat(tps[2]).toFixed(5) + ' ' + hits[2] : ''}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${e.score != null ? e.score : (e.confidence || '')}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${e.outcome || ''}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border)">${(e.notes || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
+              <td style="padding:6px;border-bottom:1px solid var(--border);text-align:center; white-space:nowrap">
+                <button class="btn btn-ghost" onclick="editJournalEntry('${e.id}')">Edit</button>
+                <button class="btn btn-ghost" onclick="deleteJournalEntry('${e.id}')">Delete</button>
+              </td>
+            </tr>`;
+          }).join('');
+        }
+      }
+      
+      function openTester(){
+        toggleScanner(false);
+        document.getElementById('journalPage').style.display='none';
+        document.getElementById('testerPage').style.display='block';
+        // reset status text
+        var sum = document.getElementById('sum'); if(sum) sum.textContent = 'Idle';
+      }
+      function closeTester(){
+        document.getElementById('testerPage').style.display='none';
+        toggleScanner(true);
+      }
+      document.getElementById('openTester')?.addEventListener('click', function(e){ e.preventDefault(); openTester(); });
+function openJournal(){
+        toggleScanner(false);
+        $('#journalPage').style.display='block';
+        renderJournal();
+      }
+      function closeJournal(){
+        $('#journalPage').style.display='none';
+        toggleScanner(true);
+      }
+      // Attach handler on the global window so inline onclick="addToJournalFromCard(...)" can resolve
+      window.addToJournalFromCard = function(elOrIdx){
+        // Supports both index-based and element-based invocation. If invoked with a DOM element that
+        // carries data-* attributes, parse them to construct a signal object. Otherwise fallback to
+        // retrieving from lastSignals by index.
+        if(elOrIdx && elOrIdx.dataset){
+          const ds = elOrIdx.dataset;
+          const tpsStr = ds.tps || '';
+          const tps = tpsStr ? tpsStr.split('|').filter(s=>s!=='' && !isNaN(parseFloat(s))).map(n=>parseFloat(n)) : [];
+          const obj = {
+            pair: ds.pair || '',
+            tf: ds.tf || '',
+            dir: ds.dir || '',
+            entry: ds.entry && ds.entry !== 'undefined' ? parseFloat(ds.entry) : undefined,
+            stop: ds.stop && ds.stop !== 'undefined' ? parseFloat(ds.stop) : undefined,
+            tps: tps,
+            setup: ds.setup || '',
+            score: ds.score && ds.score !== 'undefined' ? parseFloat(ds.score) : undefined
+          };
+          window.openJournalEditorFromSignal(obj);
+          return;
+        }
+        const s = window.lastSignals ? window.lastSignals[elOrIdx] : undefined;
+        if(!s) return;
+        window.openJournalEditorFromSignal(s);
+      };
+      function openJournalEditorFromSignal(sig){
+        const dlg = $('#journalEditor'); if(!dlg) return;
+        const dir = sig.dir || ((sig.entry!=null && sig.stop!=null) ? (sig.stop > sig.entry ? 'short' : 'long') : '');
+        // If editing an existing entry, keep its id and additional fields
+        $('#jeditId').value   = sig.id || '';
+        $('#jeditPair').value = sig.pair || '';
+        $('#jeditTF').value   = sig.tf || '';
+        $('#jeditDir').value  = dir || '';
+        $('#jeditEntry').value= sig.entry != null ? sig.entry : '';
+        $('#jeditStop').value = sig.stop != null ? sig.stop : '';
+        const tps = sig.tps || sig.targets || [];
+        $('#jeditTP1').value  = tps[0] != null ? tps[0] : '';
+        $('#jeditTP2').value  = tps[1] != null ? tps[1] : '';
+        $('#jeditTP3').value  = tps[2] != null ? tps[2] : '';
+        $('#jeditSetup').value= sig.setup || (sig.tags ? sig.tags.join(', ') : sig.type || '');
+        $('#jeditScore').value= sig.score != null ? sig.score : (sig.confidence != null ? sig.confidence : '');
+        // If editing, populate outcome, tpHits, and notes; else defaults
+        if(sig.outcome){ $('#jeditOutcome').value = sig.outcome; } else { $('#jeditOutcome').value='pending'; }
+        if(sig.tpHits && Array.isArray(sig.tpHits)){
+          $('#jeditTP1Hit').checked = !!sig.tpHits[0];
+          $('#jeditTP2Hit').checked = !!sig.tpHits[1];
+          $('#jeditTP3Hit').checked = !!sig.tpHits[2];
+        } else {
+          $('#jeditTP1Hit').checked=false; $('#jeditTP2Hit').checked=false; $('#jeditTP3Hit').checked=false;
+        }
+        if(sig.notes){ $('#jeditNotes').value = sig.notes; } else { $('#jeditNotes').value=''; }
+        dlg.showModal();
+      }
+
+      // Expose to global so that inline handlers (or other scripts) can call it directly
+      window.openJournalEditorFromSignal = openJournalEditorFromSignal;
+      // Expose editJournalEntry to global scope so inline Edit button can call it
+      window.editJournalEntry = editJournalEntry;
+      // Expose deleteJournalEntry and clearJournal globally
+      window.deleteJournalEntry = deleteJournalEntry;
+      window.clearJournal = clearJournal;
+      window.bulkDeleteSelected = bulkDeleteSelected;
+
+      // Open the journal editor for an existing entry (edit mode)
+      function editJournalEntry(id){
+        const entries = loadJournal();
+        const entry = entries.find(e => e.id === id);
+        if(!entry) return;
+        // Pass the entire entry object to prefill fields (including outcome, tpHits, notes)
+        openJournalEditorFromSignal(entry);
+      }
+      function sigType(setup){
+        if(!setup) return '';
+        const u = setup.toLowerCase();
+        if(u.includes('ai')) return 'ai';
+        if(u.includes('astrafx') || u.includes('proprietary')) return 'prop';
+        if(u.includes('pin') || u.includes('engulfing') || u.includes('morning') || u.includes('hammer') || u.includes('nr7') || u.includes('inside')) return 'pattern';
+        if(u.includes('donchian') || u.includes('bollinger') || u.includes('ema') || u.includes('ichimoku') || u.includes('opening') || u.includes('mean')) return 'strategy';
+        if(u.includes('udc')) return 'udc';
+        return 'other';
+      }
+      function saveJournalEntry(){
+        const id    = $('#jeditId').value || String(Date.now());
+        const pair  = $('#jeditPair').value;
+        const tf    = $('#jeditTF').value;
+        const dir   = $('#jeditDir').value;
+        const entry = parseFloat($('#jeditEntry').value);
+        const stop  = parseFloat($('#jeditStop').value);
+        const tps   = [];
+        const tp1 = parseFloat($('#jeditTP1').value); if(!isNaN(tp1)) tps.push(tp1);
+        const tp2 = parseFloat($('#jeditTP2').value); if(!isNaN(tp2)) tps.push(tp2);
+        const tp3 = parseFloat($('#jeditTP3').value); if(!isNaN(tp3)) tps.push(tp3);
+        const setup= $('#jeditSetup').value || '';
+        const score= parseFloat($('#jeditScore').value);
+        const outcome = $('#jeditOutcome').value || 'pending';
+        const tpHits = [ $('#jeditTP1Hit').checked, $('#jeditTP2Hit').checked, $('#jeditTP3Hit').checked ];
+        const notes = $('#jeditNotes').value || '';
+        const now   = new Date().toISOString();
+        let list = loadJournal();
+        const idx = list.findIndex(e=> e.id === id);
+        // Preserve original timestamp when editing an existing entry
+        let tsValue = now;
+        if(idx >= 0){ tsValue = list[idx].ts; }
+        const entryObj = { id, ts: tsValue, pair, tf, dir, entry, stop, tps, setup, score, type: (sigType(setup) || 'other'), outcome, tpHits, notes };
+        if(idx >= 0) list[idx] = entryObj; else list.push(entryObj);
+        saveJournal(list);
+        $('#journalEditor').close();
+        renderJournal();
+      }
+
+      // Delete a single journal entry by id with confirmation
+      function deleteJournalEntry(id){
+        const list = loadJournal();
+        const idx = list.findIndex(e => e.id === id);
+        if(idx >= 0){
+          if(confirm('Delete this entry?')){
+            list.splice(idx, 1);
+            saveJournal(list);
+            renderJournal();
+          }
+        }
+      }
+
+      // Delete multiple selected entries
+      function bulkDeleteSelected(){
+        const checkboxes = document.querySelectorAll('.journal-select:checked');
+        if(!checkboxes || checkboxes.length === 0){
+          alert('No journal entries selected.');
+          return;
+        }
+        if(confirm('Delete selected journal entries?')){
+          const ids = Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
+          let list = loadJournal();
+          list = list.filter(e => !ids.includes(e.id));
+          saveJournal(list);
+          renderJournal();
+        }
+      }
+
+      // Clear all journal entries with confirmation
+      function clearJournal(){
+        if(confirm('Clear all journal entries?')){
+          saveJournal([]);
+          renderJournal();
+        }
+      }
+      function exportCSV(){
+        const entries = loadJournal();
+        const rows = [ ['Timestamp','Pair','TF','Dir','Entry','Stop','TP1','TP2','TP3','Score','Outcome','Setup','TP1 Hit','TP2 Hit','TP3 Hit','Notes'] ];
+        entries.forEach(e=>{
+          const tps = e.tps || [];
+          rows.push([
+            e.ts,
+            e.pair,
+            e.tf,
+            e.dir,
+            e.entry,
+            e.stop,
+            tps[0] ?? '',
+            tps[1] ?? '',
+            tps[2] ?? '',
+            e.score ?? '',
+            e.outcome ?? '',
+            e.setup ?? '',
+            e.tpHits && e.tpHits[0] ? '✓' : '',
+            e.tpHits && e.tpHits[1] ? '✓' : '',
+            e.tpHits && e.tpHits[2] ? '✓' : '',
+            e.notes ? String(e.notes).replace(/"/g,'""') : ''
+          ]);
+        });
+        const csv = rows.map(r=> r.map(v => {
+          const s = String(v === undefined || v === null ? '' : v);
+          return s.includes(',') || s.includes('"') || s.includes('\n') ? '"'+s.replace(/"/g,'""')+'"' : s;
+        }).join(',')).join('\n');
+        const blob = new Blob([csv], {type:'text/csv'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'journal_' + new Date().toISOString().replace(/[:\\.-]/g,'_') + '.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      window.addEventListener('DOMContentLoaded', ()=>{
+        const jBtn = $('#openJournal'); if(jBtn){ jBtn.onclick = () => openJournal(); }
+        const backBtn = $('#journalBack'); if(backBtn){ backBtn.onclick = () => closeJournal(); }
+        const saveBtn = $('#jeditSave'); if(saveBtn){ saveBtn.onclick = () => saveJournalEntry(); }
+        const cancelBtn = $('#jeditCancel'); if(cancelBtn){ cancelBtn.onclick = () => { $('#journalEditor').close(); } }
+        ['journalFilterPair','journalFilterTF','journalFilterDir','journalFilterType','journalFilterScore'].forEach(id => {
+          const el = $('#'+id);
+          if(el){ el.onchange = renderJournal; el.oninput = renderJournal; }
+        });
+        const expBtn = $('#journalExport'); if(expBtn){ expBtn.onclick = () => exportCSV(); }
+        // Delete All (bulk delete selected)
+        const delAllBtn = $('#journalDeleteAll'); if(delAllBtn){ delAllBtn.onclick = () => bulkDeleteSelected(); }
+        // Select-all checkbox toggles row selection
+        const selAllCb = $('#journalSelectAll'); if(selAllCb){
+          selAllCb.onchange = (ev) => {
+            const cbs = document.querySelectorAll('.journal-select');
+            cbs.forEach(cb => { cb.checked = ev.target.checked; });
+          };
+        }
+      });
+    })();
+  </script>
+<script src="mdtc_embed.js"></script>
+<!-- AstraFX: Place Trade button — reads EST. POSITION SIZE and trims symbol -->
+<script>
+(function(){
+  const css = `
+    .af-btn{margin-left:6px;padding:10px 12px;border-radius:12px;border:1px solid #cf5a0f;background:#f97316;color:#111;cursor:pointer}
+    .af-btn:hover{filter:brightness(1.05)}
+    .af-badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;font-weight:700;font-size:12px;vertical-align:middle}
+    .af-badge.buy{background:#10b981;color:#111}
+    .af-badge.sell{background:#ef4444;color:#111}
+  `;
+  if(!document.getElementById('af_css')){
+    const st=document.createElement('style'); st.id='af_css'; st.textContent=css; document.head.appendChild(st);
+  }
+
+  // --- helpers ---
+  const num = s => { const m=String(s||'').replace(/[, ]/g,'').match(/-?\d+(\.\d+)?/); return m?parseFloat(m[0]):undefined; };
+  const pick = (root, sels) => { for(const sel of sels){const n=root.querySelector(sel); if(n&&n.textContent) return n.textContent.trim();} };
+  const cleanSymbol = s => {
+    if(!s) return;
+    // EUR/USD -> EURUSD; EURUSDH1 -> EURUSD; XAUUSD H1 -> XAUUSD
+    const slash = s.match(/\b([A-Z]{3})\s*\/\s*([A-Z]{3})\b/i);
+    if(slash) return (slash[1]+slash[2]).toUpperCase();
+    const six = s.replace(/[^A-Z]/gi,'').toUpperCase().match(/^[A-Z]{6}/);
+    return six ? six[0] : undefined;
+  };
+  const detectSymbol = t => cleanSymbol((t||'').toUpperCase());
+
+  const inferSide = (entry,sl,tp) => {
+    if([entry,sl].some(v=>v==null||isNaN(v))) return;
+    if(tp!=null && !isNaN(tp)){ if(sl<entry && tp>entry) return 'buy'; if(sl>entry && tp<entry) return 'sell'; }
+    else { if(sl<entry) return 'buy'; if(sl>entry) return 'sell'; }
+  };
+
+  function parseByLabels(text){
+    const T=(text||'').replace(/\u00A0/g,' ').replace(/\s+/g,' ');
+    const entry = num((T.match(/(?:^|\b)(?:entry|ent\.?)\D*([-]?\d[\d\.,]*)/i)||[])[1]);
+    const stop  = num((T.match(/(?:\b)(?:stop(?:\s*loss)?|sl)\D*([-]?\d[\d\.,]*)/i)||[])[1]);
+    const tp1   = num((T.match(/(?:\b)(?:tp1?|take\s*profit(?:\s*1)?|target(?:\s*1)?)\D*([-]?\d[\d\.,]*)/i)||[])[1]);
+    const side  = ((T.match(/\b(side|direction)\s*[:\-]?\s*(buy|sell|long|short)\b/i)||[])[2]||'')
+                    .toLowerCase().replace('long','buy').replace('short','sell') || undefined;
+
+    // <— robust lots: “EST. POSITION SIZE 0.15 Lots”, “0.15 Lots”, etc.
+    let lots;
+    let m = T.match(/est\.?\s*position\s*size[^0-9\-]*([-+]?\d+(?:\.\d+)?)(?=\s*lots?\b)/i);
+    if(!m) m = T.match(/(^|\b)([-+]?\d+(?:\.\d+)?)\s*lots?\b/i);
+    if(m) lots = parseFloat(m[2]||m[1]);
+
+    return {entry, stop, tp1, side, lots};
+  }
+
+  function extract(card){
+    const d=card.dataset||{};
+    const T=(card.textContent||'').trim();
+
+    const symbol = cleanSymbol(d.symbol) || cleanSymbol(pick(card,['.pair','.symbol'])) || detectSymbol(T);
+
+    let side = (d.side || pick(card,['.side','.direction']) || '')
+                .toLowerCase().replace('long','buy').replace('short','sell');
+
+    const entry = num(d.entry || pick(card,['[data-field="entry"]','.entry','.price-entry']));
+    const stop  = num(d.sl||d.stop || pick(card,['[data-field="stop"]','.sl','.stop','.price-sl']));
+    let tp1     = num(d.tp || pick(card,['[data-field="tp1"]','.tp1','.take-profit','.tp']));
+
+    // --- lot size from visible “EST. POSITION SIZE … Lots”
+    let size_lots = num(
+      d.size_lots || d.sizeLots ||
+      pick(card, [
+        '[data-field="size_lots"]',
+        '.size-lots',
+        '.est-position-size',
+        '.position-size',
+        // some cards render the whole line in one node
+        'div, span, p'
+      ] )
+    );
+    if(size_lots==null){
+      const t=parseByLabels(T);
+      if(tp1==null) tp1=t.tp1;
+      if(!side) side=t.side;
+      if(size_lots==null) size_lots=t.lots;
+      if(entry==null || stop==null){ return {symbol, side, entry: entry??t.entry, stop: stop??t.stop, tp1, size_lots}; }
+    }
+
+    return {symbol, side, entry, stop, tp1, size_lots};
+  }
+
+  function addBadgeNextToEntry(card, side){
+    if(card.querySelector('.af-badge')) return;
+    const entryRow = card.querySelector('[data-field="entry"]') || card.querySelector('.entry') || card;
+    const b=document.createElement('span');
+    b.className='af-badge '+(side==='sell'?'sell':'buy');
+    b.textContent=(side||'buy').toUpperCase();
+    entryRow.appendChild(b);
+  }
+
+  function addButtonToCard(card){
+    if(card.querySelector('.af-btn')) return false;
+    const o=extract(card);
+    if(!o || !o.symbol || o.entry==null || o.stop==null) return false;
+    if(!o.side) o.side = inferSide(o.entry, o.stop, o.tp1);
+
+    addBadgeNextToEntry(card, o.side||'buy');
+
+    const actions = card.querySelector('.actions, .button-row') || (card.querySelector('button')||{}).parentElement || card;
+    const btn=document.createElement('button');
+    btn.className='af-btn';
+    btn.textContent='Place Trade';
+    btn.addEventListener('click', ()=>{
+      const order = {
+        symbol:o.symbol, side:o.side||'buy',
+        entry:o.entry, stop:o.stop, tp1:o.tp1,
+        size_lots:o.size_lots   // extension will use this
+      };
+      console.log('[AstraFX] posting MDTC_ORDER', order);
+      window.postMessage({ source:'AstraFX', type:'MDTC_ORDER',    payload:order, autoSubmit:true }, '*');
+      window.postMessage({ source:'AstraFX', type:'MDTC_ORDER_V02', order,        autoSubmit:true }, '*'); // compat
+    });
+    actions.appendChild(btn);
+    return true;
+  }
+
+  function findCards(){
+    let cards=document.querySelectorAll('.signal-card, .card, .setup-card, .trade-card, [data-symbol]');
+    if(cards.length) return Array.from(cards);
+    const all=[...document.querySelectorAll('div,article,section')];
+    return all.filter(el=>{
+      const t=(el.textContent||'').toLowerCase();
+      if(!(t.includes('entry') && (t.includes('stop')||t.includes('sl')))) return false;
+      const r=el.getBoundingClientRect(); return r.width>220 && r.height>120;
+    }).filter(el=>!all.some(o=>o!==el && o.contains(el)));
+  }
+
+  function scan(){
+    const cards=findCards(); let n=0;
+    cards.forEach(c=>{ if(addButtonToCard(c)) n++; });
+    console.log('[AstraFX] Place Trade buttons added:', n);
+  }
+
+  const start = ()=>{ scan(); try{ new MutationObserver(scan).observe(document.body,{childList:true,subtree:true}); }catch(e){ setTimeout(scan,200); } };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', start, {once:true}); else start();
+
+  window.AstraFX_EMBED_STATUS = ()=>({
+    cards: document.querySelectorAll('.signal-card,.card,.setup-card,.trade-card,[data-symbol]').length,
+    buttons: document.querySelectorAll('.af-btn').length
+  });
+})();
+</script>
+<!-- AI Exclusive UI helper -->
+<script>
+    // Snapshot of last non-AI selections to restore when toggling off
+    const lastNonAI = { strategy:null, pattern:null, prop:null, udc:[] };
+    function setSelect(el, value){ if(!el) return; el.value = value; el.dispatchEvent(new Event('change', {bubbles:true})); }
+    function disableControl(el, on){ if(!el) return; el.disabled = !!on; if(on) el.classList.add('disabled'); else el.classList.remove('disabled'); }
+    function syncUDCDisplayTo(values){ if (!Array.isArray(values)) values = []; state.udc = values.slice(); const lbl = document.getElementById('udcLabel'); if(lbl){ lbl.textContent = state.udc.length ? (state.udc.length <= 2 ? state.udc.join(', ') : state.udc.length + ' selected') : 'Select'; } const menu = document.getElementById('udcMenu'); if(menu){ [...menu.querySelectorAll('input[type=checkbox]')].forEach(cb=>{ cb.checked = state.udc.includes(cb.value); }); } }
+    function applyAIExclusiveUI(isOn){ const stratSel=document.getElementById('strategySelect'); const pattSel=document.getElementById('patternSelect'); const propSel=document.getElementById('propSelect'); const udcDisp=document.getElementById('udcDisplay'); const udcWrap=document.getElementById('udcWrapper'); if(isOn){ if(lastNonAI.strategy===null) lastNonAI.strategy = stratSel ? stratSel.value : 'all'; if(lastNonAI.pattern===null) lastNonAI.pattern = pattSel ? pattSel.value : 'all'; if(lastNonAI.prop===null) lastNonAI.prop = propSel ? propSel.value : 'none'; if(!Array.isArray(lastNonAI.udc) || !lastNonAI.udc.length) lastNonAI.udc = (state.udc||[]).slice(); setSelect(stratSel,'none'); state.strategy='none'; setSelect(pattSel,'none'); state.pattern='none'; setSelect(propSel,'none'); state.prop='none'; syncUDCDisplayTo([]); disableControl(stratSel,true); disableControl(pattSel,true); disableControl(propSel,true); if(udcDisp){ udcDisp.classList.add('disabled'); udcDisp.style.pointerEvents='none'; } if(udcWrap){ udcWrap.classList.add('disabled'); } } else { if(stratSel){ const val = lastNonAI.strategy ?? 'all'; setSelect(stratSel,val); state.strategy = stratSel.value; } if(pattSel){ const val = lastNonAI.pattern ?? 'all'; setSelect(pattSel,val); state.pattern = pattSel.value; } if(propSel){ const val = lastNonAI.prop ?? 'none'; setSelect(propSel,val); state.prop = propSel.value; } syncUDCDisplayTo(lastNonAI.udc ?? []); disableControl(stratSel,false); disableControl(pattSel,false); disableControl(propSel,false); if(udcDisp){ udcDisp.classList.remove('disabled'); udcDisp.style.pointerEvents=''; } if(udcWrap){ udcWrap.classList.remove('disabled'); } lastNonAI.strategy=null; lastNonAI.pattern=null; lastNonAI.prop=null; lastNonAI.udc=[]; } }
+    // hook AI toggle on page load
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const aiSel=document.getElementById('aiIdeasSelect');
+      if(aiSel){
+        applyAIExclusiveUI(state.ai === 'on');
+        aiSel.addEventListener('change',(e)=>{
+          state.ai = e.target.value;
+          applyAIExclusiveUI(state.ai === 'on');
+        });
+      }
+    });
+  </script>
+<!-- Strategy Tester page (hidden by default) -->
+<section id="testerPage" style="display:none;padding:18px;margin-top:18px">
+<style>#testerPage html, #testerPage body{height:100%; margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial; color:var(--fg); background:#0b0f1c;}#testerPage *{box-sizing:border-box}#testerPage a{color:inherit; text-decoration:none}#testerPage /* hero */
+    .hero{
+      position:relative; display:flex; align-items:flex-start; justify-content:center;
+      min-height:38vh; padding:40px 24px; overflow:hidden;
+      background:radial-gradient(1200px 400px at 75% -20%, rgba(47,99,255,.25), transparent),
+                 radial-gradient(800px 300px at 20% 0%, rgba(255,80,80,.22), transparent),
+                 url('https://images.unsplash.com/photo-1641934747174-4b45e8038e2e?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
+      border-bottom:1px solid var(--border);
+      box-shadow:inset 0 -120px 120px rgba(0,0,0,.55);
+    }#testerPage .wrap{position:relative; z-index:2; width:min(1400px, 94vw); margin:0 auto;}#testerPage .brand-bar{display:flex; align-items:center; justify-content:space-between; gap:16px}#testerPage .brand-left{display:flex; align-items:center; gap:14px}#testerPage .logo{height:40px; width:auto}#testerPage .title{font-size:42px; font-weight:800; letter-spacing:.2px; text-shadow:0 10px 40px rgba(0,0,0,.45)}#testerPage .subtitle{font-size:18px; font-weight:700; color:#7db0ff}#testerPage .nav{display:flex; gap:10px; align-items:center}#testerPage .btn{appearance:none; border:1px solid var(--border); background:rgba(255,255,255,.08); color:var(--fg);
+         padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer; transition:all .2s ease; box-shadow:0 8px 26px rgba(0,0,0,.25)}#testerPage .btn:hover{transform:translateY(-1px); background:rgba(255,255,255,.12)}#testerPage .btn.primary{background:var(--accent); border-color:transparent}#testerPage .btn.badge{padding:10px 16px}#testerPage /* panel area */
+    .panel{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:var(--shadow)}#testerPage .grid{display:grid; grid-template-columns:repeat(6, 1fr); gap:12px}#testerPage .grid select, #testerPage .grid input[type='range']{width:100%; background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--fg); border-radius:10px; padding:10px}#testerPage .grid .rangeWrap{display:flex; align-items:center; gap:10px}#testerPage .grid .rangeWrap output{min-width:36px; display:inline-block; text-align:center; background:rgba(255,255,255,.06); border:1px solid var(--border); border-radius:10px; padding:8px 10px}#testerPage .muted{color:var(--muted)}#testerPage .section-title{margin:26px 0 10px; font-weight:800; letter-spacing:.4px}#testerPage /* multi-select look like others */
+    .multi{height:120px}#testerPage .muted-note{font-size:13px; color:var(--muted)}#testerPage /* right action column */
+    .actions{position:absolute; right:24px; top:calc(38vh + 24px); display:flex; flex-direction:column; gap:12px}
+    @media (max-width: 1100px){ .actions{position:static; margin:12px 0} }#testerPage /* summary / status */
+    .status{margin-top:16px; display:flex; align-items:center; gap:12px}#testerPage .bar{flex:1; height:10px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; border:1px solid var(--border)}#testerPage .bar>span{display:block; height:100%; width:0%; background:linear-gradient(90deg, #2f63ff, #7db0ff); transition:width .25s ease}#testerPage /* results text */
+    .results{white-space:pre-wrap; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:12px; padding:14px}
+
+  
+/* === width-only tweak for UDC (scoped) === */
+#testerPage .udc-wrap { max-width: 24ch; }
+#testerPage .udc-toggle { width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#testerPage .udc-menu { width: 100%; min-width: 22ch; }
+
+/* UDC dropdown (scoped to testerPage) */
+#testerPage .udc-wrap { position: relative; max-width: 28ch; }
+#testerPage .udc-toggle {
+  width: 100%; text-align: left; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+  color: #f4f6fb; padding: 10px 12px; border-radius: 10px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#testerPage .udc-menu {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 60;
+  max-height: 280px; overflow: auto;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgb(10,14,22);
+  color: #f4f6fb;
+  border-radius: 12px; padding: 8px; display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+}
+#testerPage .udc-menu.open { display: block; }
+#testerPage .udc-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; cursor: pointer; }
+#testerPage .udc-item:hover { background: rgba(255,255,255,.08); }
+
+/* Keep Proprietary title on one line and ensure field is wide enough */
+#testerPage select#prop { min-width: 44ch; width: max-content; }
+
+#testerPage .udc-toggle.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Run Test button styled solid blue */
+#testerPage #runTestBtn {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+#testerPage #runTestBtn:hover {
+  background-color: #0069d9;
+}
+
+/* Force black text inside dropdown selects/options */
+#testerPage select,
+#testerPage select option {
+  color: #000;
+}
+</style>
+<main class="wrap" style="margin-top:60px; padding-bottom:60px">
+<!-- Controls grid -->
+<div class="panel">
+<div class="grid">
+<div>
+<div class="muted" style="grid-column: span 2;">Pairs</div>
+<select id="pair">
+<option>EURUSD</option><option>GBPUSD</option><option>USDJPY</option><option>AUDUSD</option>
+<option>USDCAD</option><option>USDCHF</option><option>NZDUSD</option>
+<option>XAUUSD</option>
+</select>
+</div>
+<div>
+<div class="muted">Timeframe</div>
+<select id="tf">
+<option>M5</option><option selected="">M15</option><option>M30</option><option>H1</option><option>H4</option><option>D1</option>
+</select>
+</div>
+<div>
+<div class="muted">Lookback</div>
+<select id="look">
+<option>3 days</option><option>7 days</option><option>14 days</option><option selected="">30 days</option>
+</select>
+</div>
+<div>
+<div class="muted">Min Score</div>
+<div class="rangeWrap">
+<input id="score" max="100" min="0" oninput="document.getElementById('sout').value=this.value" type="range" value="70"/>
+<output id="sout">70</output>
+</div>
+</div>
+<div>
+<div class="muted">Exit Rule</div>
+<select id="exit"><option selected="">TP1</option><option>TP2</option><option>TP3</option></select>
+</div>
+</div>
+<div class="grid" style="margin-top:12px">
+<div>
+<div class="muted">Strategy</div>
+<select id="strategy">
+<option value="">— Select —</option>
+<option value="ichimoku">Ichimoku</option>
+<option value="ema_pullback">EMA(9/21) Pullback</option>
+<option value="bbsqueeze">Bollinger Squeeze Breakout</option>
+<option value="donchian">Donchian 20 Break</option>
+<option value="orb_london">Opening-Range Breakout (London)</option>
+<option value="rsi2">RSI-2 Mean Reversion</option>
+</select>
+</div>
+<div>
+<div class="muted">Pattern</div>
+<select id="pattern">
+<option value="">— Select —</option>
+<option value="pinbar">Pin Bar</option>
+<option value="engulfing">Engulfing</option>
+<option value="insidebar">Inside Bar</option>
+<option value="nr7">NR7</option>
+</select>
+</div>
+<div>
+<div class="muted">AstraFX Proprietary Strategies</div>
+<select id="prop">
+<option value="">— Select —</option>
+<option value="astra1">AstraFX #1</option>
+</select>
+</div>
+<div style="grid-column: span 3">
+<div class="muted">User Defined Confluence</div>
+<div class="udc-wrap"><button class="udc-toggle" id="udcBtn" type="button">- Select -</button><div aria-hidden="true" class="udc-menu" id="udcMenu"></div><select id="udc" multiple="" style="display:none">
+</select></div>
+</div>
+</div>
+<div class="status"><strong>Summary:</strong> <span class="muted" id="sum">Idle</span>
+<div class="bar"><span id="bar"></span></div>
+</div>
+</div>
+<div style="display:flex; align-items:flex-start; gap:16px; margin-top:18px">
+<div style="flex:1">
+<div class="section-title">RESULTS</div>
+<div class="results" id="resultsBox">—</div>
+</div>
+<div class="actions">
+<button class="btn primary" id="runBtn">Run Test</button>
+<button class="btn" disabled="" id="csvBtn">Download CSV</button>
+</div>
+</div>
+</main>
+<script>
+    // Populate UDC items from known server list
+    const UDC_ITEMS = [
+      "Trend and structure","D1/H4 bias","20/50 EMA slope/stack","Location","HTF S/R",
+      "Supply - Demand zones","FIB overlap","Round levels","Prior day high or low","Classic pivots",
+      "Liquidity & Imbalance","Liquidity sweep","Fair Value Gap","Momentum Confirmation",
+      "Pinbar","Engulfing","Hammer / Shooting star","Morning star / Evening star","Hanging man"
+    ];
+
+    const udcEl = document.getElementById('udc');
+    for(const it of UDC_ITEMS){ const o=document.createElement('option'); o.textContent=it; o.value=it; udcEl.appendChild(o); }
+
+    // Mutually exclusive second row
+    const ids = ['strategy','pattern','prop','udc'];
+    function enforceExclusivity(source){
+      const hasStrategy = document.getElementById('strategy').value !== "";
+      const hasPattern  = document.getElementById('pattern').value  !== "";
+      const hasProp     = document.getElementById('prop').value     !== "";
+      const hasUdc      = document.getElementById('udc').selectedOptions.length > 0;
+      const on = {strategy:hasStrategy, pattern:hasPattern, prop:hasProp, udc:hasUdc};
+      for(const id of ids){
+        const el = document.getElementById(id);
+        const active = on[id];
+        if(active){
+          for(const other of ids){ if(other!==id){ const o=document.getElementById(other); o.disabled=true; o.classList.add('muted'); } }
+        }else{
+          if(!Object.values(on).some(v=>v)){ // none selected
+            el.disabled=false; el.classList.remove('muted');
+          }
+        }
+      }
+    }
+    for(const id of ids){
+      const el=document.getElementById(id);
+      el.addEventListener('change', ()=>enforceExclusivity(id));
+    }
+
+    // Build query & run
+    const runBtn=document.getElementById('runBtn');
+    const csvBtn=document.getElementById('csvBtn');
+    const bar=document.getElementById('bar');
+    const sum=document.getElementById('sum');
+    const res=document.getElementById('resultsBox');
+    let lastTrades=[];
+
+    function lookVal(){ return parseInt(document.getElementById('look').value); }
+    // normalize lookback value (label -> int)
+    (function normalizeLookback(){
+      const el=document.getElementById('look');
+      const v=el.value; const n=parseInt(v);
+      el.addEventListener('change', ()=>{});
+      el.value="30 days"; // visual default
+      Object.defineProperty(window,'lookBackDays',{get(){ return parseInt(document.getElementById('look').value); }});
+    })();
+
+    document.getElementById('look').addEventListener('change', (e)=>{
+      // nothing needed; just a select
+    });
+
+    function getLookback(){
+      const txt = document.getElementById('look').value;
+      return parseInt(txt);
+    }
+
+    runBtn.addEventListener('click', async ()=>{
+      // progress start
+      bar.style.width='20%'; sum.textContent='Running…';
+      const pair=document.getElementById('pair').value;
+      const tf=document.getElementById('tf').value;
+      const lb=getLookback();
+      const score=document.getElementById('score').value;
+      const exit=document.getElementById('exit').value;
+      // group
+      let group=''; let signal=''; let udc=[];
+      if(document.getElementById('strategy').value){ group='strategy'; signal=document.getElementById('strategy').value; }
+      else if(document.getElementById('pattern').value){ group='pattern'; signal=document.getElementById('pattern').value; }
+      else if(document.getElementById('prop').value){ group='prop'; signal=document.getElementById('prop').value; }
+      else { group='udc'; udc=[...document.getElementById('udc').selectedOptions].map(o=>o.value); }
+      bar.style.width='35%';
+      const params=new URLSearchParams({pair, tf, lookback_days:String(lb), min_score:String(score), exit_rule:exit, group, signal:signal||'', udc:udc.join(',')});
+      const r=await fetch('/api/tester?'+params.toString());
+      bar.style.width='60%';
+      let data;
+      try{ data=await r.json(); }catch{ res.textContent='Error'; bar.style.width='0%'; sum.textContent='Idle'; return; }
+      bar.style.width='90%';
+      lastTrades = data.trades || [];
+      const s = data.summary, R = data.results;
+      let signalText = s.group === 'User Defined Confluence' ? s.signal : ({
+        ichimoku:'Ichimoku', ema_pullback:'EMA(9/21) Pullback', bbsqueeze:'Bollinger Squeeze Breakout', donchian:'Donchian 20 Break', orb_london:'Opening-Range Breakout (London)', rsi2:'RSI-2 Mean Reversion', astra1:'AstraFX #1'
+      }[s.signal] || s.signal);
+      const resultsText =
+`RESULTS
+
+Group: ${s.group === 'AstraFX Proprietary' ? 'AstraFX Proprietary Strategies' : s.group.toUpperCase()}
+Signal: ${signalText}
+Timeframe: ${s.timeframe}
+Exit Rule: ${s.exit_rule}
+Min Score: ${s.min_score}
+Look back: ${s.lookback_days} days
+
+Pair: ${R.pair}
+Trades: ${R.trades}
+Wins: ${R.wins}
+Losses: ${R.losses}
+Win%: ${R.win_pct}%`;
+      res.textContent = resultsText;
+      csvBtn.disabled = lastTrades.length===0;
+      bar.style.width='100%'; setTimeout(()=>{bar.style.width='0%';}, 800);
+      sum.textContent='Done';
+    });
+
+    csvBtn.addEventListener('click', ()=>{
+      const rows=[['time','direction','entry','stop','tp','outcome','bars_held']];
+      for(const t of lastTrades){ rows.push([t.time,t.direction,t.entry,t.stop,t.tp,t.outcome,t.bars_held]); }
+      const csv = rows.map(r=>r.join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='strategy_tester_results.csv'; a.click(); URL.revokeObjectURL(a.href);
+    });
+  </script>
+<script>(function(){ 
+    // Populate UDC items from known server list
+    const UDC_ITEMS = [
+      "Trend and structure","D1/H4 bias","20/50 EMA slope/stack","Location","HTF S/R",
+      "Supply - Demand zones","FIB overlap","Round levels","Prior day high or low","Classic pivots",
+      "Liquidity & Imbalance","Liquidity sweep","Fair Value Gap","Momentum Confirmation",
+      "Pinbar","Engulfing","Hammer / Shooting star","Morning star / Evening star","Hanging man"
+    ];
+
+    const udcEl = document.getElementById('udc');
+    for(const it of UDC_ITEMS){ const o=document.createElement('option'); o.textContent=it; o.value=it; udcEl.appendChild(o); }
+
+    // Mutually exclusive second row
+    const ids = ['strategy','pattern','prop','udc'];
+    function enforceExclusivity(source){
+      const hasStrategy = document.getElementById('strategy').value !== "";
+      const hasPattern  = document.getElementById('pattern').value  !== "";
+      const hasProp     = document.getElementById('prop').value     !== "";
+      const hasUdc      = document.getElementById('udc').selectedOptions.length > 0;
+      const on = {strategy:hasStrategy, pattern:hasPattern, prop:hasProp, udc:hasUdc};
+      for(const id of ids){
+        const el = document.getElementById(id);
+        const active = on[id];
+        if(active){
+          for(const other of ids){ if(other!==id){ const o=document.getElementById(other); o.disabled=true; o.classList.add('muted'); } }
+        }else{
+          if(!Object.values(on).some(v=>v)){ // none selected
+            el.disabled=false; el.classList.remove('muted');
+          }
+        }
+      }
+    }
+    for(const id of ids){
+      const el=document.getElementById(id);
+      el.addEventListener('change', ()=>enforceExclusivity(id));
+    }
+
+    // Build query & run
+    const runBtn=document.getElementById('runBtn');
+    const csvBtn=document.getElementById('csvBtn');
+    const bar=document.getElementById('bar');
+    const sum=document.getElementById('sum');
+    const res=document.getElementById('resultsBox');
+    let lastTrades=[];
+
+    function lookVal(){ return parseInt(document.getElementById('look').value); }
+    // normalize lookback value (label -> int)
+    (function normalizeLookback(){
+      const el=document.getElementById('look');
+      const v=el.value; const n=parseInt(v);
+      el.addEventListener('change', ()=>{});
+      el.value="30 days"; // visual default
+      Object.defineProperty(window,'lookBackDays',{get(){ return parseInt(document.getElementById('look').value); }});
+    })();
+
+    document.getElementById('look').addEventListener('change', (e)=>{
+      // nothing needed; just a select
+    });
+
+    function getLookback(){
+      const txt = document.getElementById('look').value;
+      return parseInt(txt);
+    }
+
+    runBtn.addEventListener('click', async ()=>{
+      // progress start
+      bar.style.width='20%'; sum.textContent='Running…';
+      const pair=document.getElementById('pair').value;
+      const tf=document.getElementById('tf').value;
+      const lb=getLookback();
+      const score=document.getElementById('score').value;
+      const exit=document.getElementById('exit').value;
+      // group
+      let group=''; let signal=''; let udc=[];
+      if(document.getElementById('strategy').value){ group='strategy'; signal=document.getElementById('strategy').value; }
+      else if(document.getElementById('pattern').value){ group='pattern'; signal=document.getElementById('pattern').value; }
+      else if(document.getElementById('prop').value){ group='prop'; signal=document.getElementById('prop').value; }
+      else { group='udc'; udc=[...document.getElementById('udc').selectedOptions].map(o=>o.value); }
+      bar.style.width='35%';
+      const params=new URLSearchParams({pair, tf, lookback_days:String(lb), min_score:String(score), exit_rule:exit, group, signal:signal||'', udc:udc.join(',')});
+      const r=await fetch('/api/tester?'+params.toString());
+      bar.style.width='60%';
+      let data;
+      try{ data=await r.json(); }catch{ res.textContent='Error'; bar.style.width='0%'; sum.textContent='Idle'; return; }
+      bar.style.width='90%';
+      lastTrades = data.trades || [];
+      const s = data.summary, R = data.results;
+      let signalText = s.group === 'User Defined Confluence' ? s.signal : ({
+        ichimoku:'Ichimoku', ema_pullback:'EMA(9/21) Pullback', bbsqueeze:'Bollinger Squeeze Breakout', donchian:'Donchian 20 Break', orb_london:'Opening-Range Breakout (London)', rsi2:'RSI-2 Mean Reversion', astra1:'AstraFX #1'
+      }[s.signal] || s.signal);
+      const resultsText =
+`RESULTS
+
+Group: ${s.group === 'AstraFX Proprietary' ? 'AstraFX Proprietary Strategies' : s.group.toUpperCase()}
+Signal: ${signalText}
+Timeframe: ${s.timeframe}
+Exit Rule: ${s.exit_rule}
+Min Score: ${s.min_score}
+Look back: ${s.lookback_days} days
+
+Pair: ${R.pair}
+Trades: ${R.trades}
+Wins: ${R.wins}
+Losses: ${R.losses}
+Win%: ${R.win_pct}%`;
+      res.textContent = resultsText;
+      csvBtn.disabled = lastTrades.length===0;
+      bar.style.width='100%'; setTimeout(()=>{bar.style.width='0%';}, 800);
+      sum.textContent='Done';
+    });
+
+    csvBtn.addEventListener('click', ()=>{
+      const rows=[['time','direction','entry','stop','tp','outcome','bars_held']];
+      for(const t of lastTrades){ rows.push([t.time,t.direction,t.entry,t.stop,t.tp,t.outcome,t.bars_held]); }
+      const csv = rows.map(r=>r.join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='strategy_tester_results.csv'; a.click(); URL.revokeObjectURL(a.href);
+    });
+   })();</script>
+<script>
+(function(){
+  function initUdcDropdown(){
+    var root = document.getElementById('testerPage');
+    if(!root) return false;
+    var btn  = root.querySelector('#udcBtn');
+    var menu = root.querySelector('#udcMenu');
+    var sel  = root.querySelector('#udc');
+    if(!btn || !menu || !sel) return false;
+
+    function labelText(){
+      try {
+        var selected = Array.from(sel.options).filter(function(o){return o.selected}).map(function(o){return o.textContent});
+        return selected.length ? selected.join(', ') : '- Select -';
+      } catch(e) { return '- Select -'; }
+    }
+    function build(){
+      menu.innerHTML = '';
+      Array.from(sel.options).forEach(function(opt){
+        var row = document.createElement('label');
+        row.className = 'udc-item';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = opt.value; cb.checked = opt.selected;
+        var sp = document.createElement('span'); sp.textContent = opt.textContent;
+        row.appendChild(cb); row.appendChild(sp);
+        row.addEventListener('change', function(){
+          opt.selected = cb.checked;
+          btn.textContent = labelText();
+          sel.dispatchEvent(new Event('change', {bubbles:true}));
+        });
+        menu.appendChild(row);
+      });
+      btn.textContent = labelText();
+    }
+
+    // prevent double-binding
+    if (!btn.__udcBound){
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        if (!menu.classList.contains('open')) build();
+        menu.classList.toggle('open');
+      });
+      document.addEventListener('click', function(e){
+        if(!menu.contains(e.target) && !btn.contains(e.target)) menu.classList.remove('open');
+      });
+      sel.addEventListener('change', function(){ btn.textContent = labelText(); });
+      btn.__udcBound = true;
+      // set initial label
+      btn.textContent = labelText();
+    }
+    return true;
+  }
+
+  // Init when DOM is ready
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(initUdcDropdown, 0);
+  });
+
+  // Also init whenever the Strategy Tester is opened from the header
+  var openTesterBtn = document.getElementById('openTester');
+  if (openTesterBtn){
+    openTesterBtn.addEventListener('click', function(){
+      setTimeout(initUdcDropdown, 0);
+    });
+  }
+})();
+</script>
+<script>
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function updateUdcEnabled(){
+    var s = byId('strategy'), p = byId('pattern'), pr = byId('prop');
+    var sel = byId('udc'), btn = byId('udcBtn'), menu = byId('udcMenu');
+    if(!sel || !btn) return;
+    var otherChosen = false;
+    if (s && s.value)  otherChosen = true;
+    if (p && p.value)  otherChosen = true;
+    if (pr && pr.value) otherChosen = true;
+
+    if (otherChosen){
+      if (menu) menu.classList.remove('open');
+      if (sel){
+        Array.from(sel.options).forEach(function(o){ o.selected = false; });
+        sel.disabled = true;
+        sel.dispatchEvent(new Event('change', {bubbles:true}));
+      }
+      btn.classList.add('is-disabled');
+      btn.setAttribute('aria-disabled','true');
+      btn.textContent = '- Select -';
+    } else {
+      if (sel) sel.disabled = false;
+      btn.classList.remove('is-disabled');
+      btn.removeAttribute('aria-disabled');
+      var any = sel && Array.from(sel.options).some(function(o){ return o.selected; });
+      if (!any) btn.textContent = '- Select -';
+    }
+  }
+  ['strategy','pattern','prop','udc'].forEach(function(id){ var el = document.getElementById(id); if(el) el.addEventListener('change', updateUdcEnabled); });
+  document.addEventListener('DOMContentLoaded', updateUdcEnabled);
+  var openTesterBtn = document.getElementById('openTester');
+  if (openTesterBtn) openTesterBtn.addEventListener('click', function(){ setTimeout(updateUdcEnabled, 0); });
+})();
+</script>
+<style>
+/* Strong, scoped override for the Run Test button */
+#testerPage #runBtn {
+  background: #007bff !important;  /* override gradients */
+  color: #ffffff !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+}
+#testerPage #runBtn:hover {
+  background: #0069d9 !important;
+}
+</style>
+</section>
+<script>
+(function(){
+  function setActive(which){
+    var ids = {scanner:'openScanner', journal:'openJournal', tester:'openTester'};
+    Object.keys(ids).forEach(function(k){
+      var el = document.getElementById(ids[k]); if(!el) return;
+      el.classList.remove('alt');
+      if (k===which){ el.classList.add('jumbo'); } else { el.classList.add('alt'); }
+    });
+  }
+  function showScannerDirect(){
+    try {
+      var jp = document.getElementById('journalPage'); if (jp) jp.style.display='none';
+      var tp = document.getElementById('testerPage');  if (tp) tp.style.display='none';
+      ['.bar','.filters','#cardsGrid','footer'].forEach(function(sel){
+        document.querySelectorAll(sel).forEach(function(el){ el.style.display = ''; });
+      });
+    } catch(e){ console.warn('showScannerDirect fallback error', e); }
+    try { if (location.hash !== '#scanner') location.hash = '#scanner'; } catch {}
+    setActive('scanner');
+  }
+  var os = document.getElementById('openScanner');
+  if (os){ os.addEventListener('click', function(e){ e.preventDefault(); showScannerDirect(); }); }
+  var oldOpenTester = window.openTester;
+  window.openTester = function(){ if(oldOpenTester) oldOpenTester(); setActive('tester'); };
+  var oldOpenJournal = window.openJournal;
+  window.openJournal = function(){ if(oldOpenJournal) oldOpenJournal(); setActive('journal'); };
+  window.addEventListener('DOMContentLoaded', function(){
+    var jp = document.getElementById('journalPage');
+    var tp = document.getElementById('testerPage');
+    var onJournal = jp && getComputedStyle(jp).display!=='none';
+    var onTester  = tp && getComputedStyle(tp).display!=='none';
+    setActive(onJournal ? 'journal' : (onTester ? 'tester' : 'scanner'));
+  });
+})();</script><script>
+// Robust opener: guarantees Contract Settings dialog opens even if another handler throws.
+(function(){
+  function safeOpenSettings(){
+    try{
+      var dlg = document.getElementById('settings');
+      if(!dlg) return;
+      try{
+        // populate only if fields exist; do not touch removed API inputs
+        var set = function(id, val){ var el = document.getElementById(id); if(el) el.value = val; };
+        if (window.state && state.settings){
+          set('set_fx_pip', state.settings.fx_pip);
+          set('set_jpy_pip', state.settings.jpy_pip);
+          set('set_fx_pip_per_lot', state.settings.fx_pip_per_lot);
+          set('set_xau_point', state.settings.xau_point);
+          set('set_xau_per_point', state.settings.xau_per_point);
+        }
+      }catch(_){}
+      if (typeof dlg.showModal === 'function') dlg.showModal();
+      else dlg.setAttribute('open','');
+    }catch(err){ console.warn('force-open settings failed', err); }
+  }
+  function bind(){
+    var btn = document.getElementById('openSettings');
+    if(!btn) return;
+    btn.addEventListener('click', function(){ setTimeout(safeOpenSettings, 0); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
+</script></body>
+</html>
