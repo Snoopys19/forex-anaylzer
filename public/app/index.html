@@ -1,0 +1,62 @@
+<!-- public/app/index.html — Drop‑in -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AstraFX</title>
+</head>
+<body>
+  <!-- Your existing UI goes here. This file only adds the safe autoload script below. -->
+
+  <!-- BEGIN: AstraFX strategy autoload (safe) -->
+  <script>
+  (function() {
+    function findPrimaryStrategySelect() {
+      const labels = Array.from(document.querySelectorAll('label, .label, .form-label, span, p, h4, h5'))
+        .filter(el => /strategy/i.test(el.textContent || ''));
+      for (const lab of labels) {
+        const inSection = lab.closest('section,div,form');
+        if (inSection) {
+          const sel = inSection.querySelector('select');
+          if (sel) return sel;
+        }
+        if (lab.nextElementSibling && lab.nextElementSibling.tagName === 'SELECT') return lab.nextElementSibling;
+      }
+      const byId = document.querySelector('select#strategy, select#strategySelect, select#strategy-select, select[name*="strategy" i], select[id*="strategy" i]');
+      if (byId) return byId;
+      const all = Array.from(document.querySelectorAll('select')).filter(s => s.offsetParent !== null);
+      const nonHelper = all.filter(s => !s.closest('#astraStrategyPanel'));
+      nonHelper.sort((a,b)=>b.getBoundingClientRect().width - a.getBoundingClientRect().width);
+      return nonHelper[0] || null;
+    }
+    async function loadStrategies() {
+      try { const res = await fetch('/api/strategies', {cache:'no-store'}); if(!res.ok) throw new Error(res.status); return await res.json(); }
+      catch(e){ console.warn('Could not load /api/strategies:', e); return []; }
+    }
+    function mergeOptions(select, strategies) {
+      if (!select) return;
+      try { if (select.getBoundingClientRect().width < 160) select.style.minWidth = '260px'; } catch(e){}
+      const existing = new Set(Array.from(select.options).map(o=>o.value));
+      let appended = 0;
+      strategies.forEach(s=>{
+        if (!s || !s.id) return;
+        if (!existing.has(s.id)) {
+          const opt = document.createElement('option');
+          opt.value = s.id; opt.textContent = s.name || s.id;
+          select.appendChild(opt); appended++;
+        }
+      });
+      if (select.options.length === 0) {
+        const opt = document.createElement('option'); opt.value=''; opt.textContent='(No strategies found)'; select.appendChild(opt);
+      }
+      console.log('[AstraFX] strategy options appended:', appended);
+    }
+    async function init(){ const select = findPrimaryStrategySelect(); if(!select){console.warn('[AstraFX] No strategy select found'); return;} const strategies = await loadStrategies(); mergeOptions(select, strategies); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  })();
+  </script>
+  <!-- END: AstraFX strategy autoload (safe) -->
+
+</body>
+</html>
