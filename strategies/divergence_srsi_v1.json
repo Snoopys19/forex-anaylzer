@@ -1,0 +1,97 @@
+{
+  "id": "divergence_srsi_v1",
+  "name": "Stoch RSI Divergence + Structure",
+  "description": "Trade momentum reversals by combining Stochastic RSI divergence with a break of structure and EMA trend filter; entry on the retest with candle confirmation.",
+  "tags": [
+    "divergence",
+    "reversal",
+    "mechanical"
+  ],
+  "timeframes": {
+    "bias_tf": "4H",
+    "entry_tf": "M15"
+  },
+  "indicators": {
+    "srsi_len": 14,
+    "srsi_k": 3,
+    "srsi_d": 3,
+    "ema_trend": 200,
+    "atr_len": 14,
+    "atr_avg_len": 20,
+    "swing_lookback": 20,
+    "structure_lookback": 10
+  },
+  "entry_rules": [
+    "Detect regular divergence on Stoch RSI between price swing and oscillator swing within swing_lookback bars.",
+    "Bullish setup: price makes lower low while Stoch RSI makes higher low; Bearish setup: price makes higher high while Stoch RSI makes lower high.",
+    "Confirm market structure shift (BOS/CHOCH) in the divergence direction within structure_lookback bars.",
+    "EMA trend filter: For longs, price >= EMA(ema_trend); for shorts, price <= EMA(ema_trend).",
+    "Volatility filter: ATR(atr_len) > SMA(ATR(atr_len), atr_avg_len).",
+    "Entry trigger: On the first retest of the BOS level (support/resistance flip), require a reversal candle (pin/engulfing) closing in the trade direction."
+  ],
+  "invalidations": [
+    "If opposite divergence forms and triggers a BOS before entry, cancel setup.",
+    "If price closes beyond the divergence swing extremum prior to entry, cancel setup (divergence failed)."
+  ],
+  "stop_takeprofit": {
+    "stop": "Place SL beyond the divergence swing extremum or 1*ATR beyond the trigger candle (max of the two).",
+    "tp1_rr": 1.2,
+    "tp2_rr": 2.0,
+    "partial_close_at_tp1": 0.5,
+    "move_sl_to_be_at_tp1": true,
+    "trail_after_tp1": "Optional ATR(atr_len) trailing stop until TP2"
+  },
+  "risk": {
+    "risk_per_trade_pct": 1.0,
+    "max_concurrent_trades": 3,
+    "pair_lockout_after_losses": 2
+  },
+  "scoring": [
+    {
+      "rule": "valid_divergence_detected",
+      "points": 2
+    },
+    {
+      "rule": "bos_confirmed",
+      "points": 2
+    },
+    {
+      "rule": "ema_trend_filter_pass",
+      "points": 1
+    },
+    {
+      "rule": "atr_above_avg",
+      "points": 1
+    },
+    {
+      "rule": "reversal_candle_on_retest",
+      "points": 1
+    },
+    {
+      "min_total": 6
+    }
+  ],
+  "tester_settings": {
+    "spread_pips": 1.2,
+    "slippage_pips": 0.5,
+    "commission_per_lot_usd": 7,
+    "session_filter": "any"
+  },
+  "ui": {
+    "parameters_exposed": [
+      "entry_tf",
+      "swing_lookback",
+      "structure_lookback",
+      "srsi_len",
+      "srsi_k",
+      "srsi_d",
+      "tp1_rr",
+      "tp2_rr"
+    ],
+    "defaults_locked": [
+      "ema_trend",
+      "atr_len",
+      "atr_avg_len"
+    ]
+  }
+}
